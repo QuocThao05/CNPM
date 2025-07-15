@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+    <resources>
+        <item name="header_card" type="id"/>
+        <item name="form_card" type="id"/>
+        <item name="sp_role" type="id"/>
+        <item name="rv_courses" type="id"/>
+        <item name="tv_welcome" type="id"/>
+        <item name="bottom_navigation" type="id"/>
+    </resources>

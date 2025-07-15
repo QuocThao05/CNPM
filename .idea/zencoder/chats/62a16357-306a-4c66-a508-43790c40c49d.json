@@ -1,0 +1,93 @@
+{
+    "checksum": "4e518adfc05a9a348d7e2a3cedafe3361ff6dfea3668010f1ace47c796cb8a9b",
+    "data": {
+    "id": "62a16357-306a-4c66-a508-43790c40c49d",
+    "createdAt": 1751436698009,
+    "updatedAt": 1751436710357,
+    "title": "/unittests  Generate tests for getId method",
+    "messages": [
+        {
+            "id": "af36b2a5-2183-437a-b144-fb03922f6910",
+            "role": "user",
+            "content": [
+                {
+                    "type": "command",
+                    "commandName": "unittests"
+                },
+                {
+                    "type": "text",
+                    "text": " Generate tests for getId method"
+                }
+            ],
+            "createdAt": 1751436698044,
+            "isInternal": false,
+            "rawContent": {
+                "type": "doc",
+                "content": [
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {
+                                "type": "command",
+                                "attrs": {
+                                    "label": "unittests"
+                                },
+                                "content": [
+                                    {
+                                        "type": "text",
+                                        "text": "/unittests"
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "text",
+                                "text": " Generate tests for getId method"
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "aca55f34-16a3-45c3-a652-4c778318d76b",
+            "role": "assistant",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "I'll help you generate tests for the `getId` method. Let me first explore the project structure to understand the codebase and locate the `getId` method."
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01Fii5zoPrP4YayWheKDFuQf",
+                    "statusText": "Viewed folder",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": ".",
+                                "fsPath": "C:\\DoAnCNPMLT\\."
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01F98DyKnD2fRBpoGPLzaTRN",
+                    "statusText": "Fulltext search",
+                    "status": "IN_PROGRESS",
+                    "isHidden": false
+                }
+            ],
+            "context": {
+                "author": "Unit Test Agent",
+                "operationId": "7825ffbe-8fdd-4408-84bf-5fbfe1f40b52"
+            },
+            "createdAt": 1751436701390,
+            "isInternal": false
+        }
+    ],
+    "isAgent": true,
+    "isUnitTestsAgent": true
+}
+}

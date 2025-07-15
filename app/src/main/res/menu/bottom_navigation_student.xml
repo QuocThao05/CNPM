@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/nav_home"
+        android:icon="@drawable/ic_home_24"
+        android:title="Trang chủ" />
+    <item
+        android:id="@+id/nav_courses"
+        android:icon="@drawable/ic_book_24"
+        android:title="Khóa học" />
+    <item
+        android:id="@+id/nav_progress"
+        android:icon="@drawable/ic_trending_up_24"
+        android:title="Tiến độ" />
+    <item
+        android:id="@+id/nav_profile"
+        android:icon="@drawable/ic_person_24"
+        android:title="Hồ sơ" />
+</menu>

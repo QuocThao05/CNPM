@@ -1,0 +1,36 @@
+<resources>
+    <string name="app_name">TiengAnh</string>
+    <string-array name="content_types">
+        <item>Lecture</item>
+        <item>Quiz</item>
+        <item>Material</item>
+    </string-array>
+    <string-array name="course_names">
+        <item>English Basic</item>
+        <item>English Advanced</item>
+        <item>Grammar</item>
+    </string-array>
+    <string-array name="levels">
+        <item>Beginner</item>
+        <item>Intermediate</item>
+        <item>Advanced</item>
+    </string-array>
+    <string-array name="answer_options">
+        <item>Option 1</item>
+        <item>Option 2</item>
+        <item>Option 3</item>
+        <item>Option 4</item>
+    </string-array>
+    <string-array name="role_array">
+        <item>Student</item>
+        <item>Teacher</item>
+    </string-array>
+
+
+    <!-- Role options -->
+    <string-array name="user_roles">
+        <item>Học viên</item>
+        <item>Giáo viên</item>
+        <item>Quản trị viên</item>
+    </string-array>
+</resources>
