@@ -49,16 +49,8 @@ public class EnrollmentAdapter extends RecyclerView.Adapter<EnrollmentAdapter.En
 
     class EnrollmentViewHolder extends RecyclerView.ViewHolder {
         private CardView cardEnrollment;
-        private TextView tvStudentName;
-        private TextView tvStudentEmail;
-        private TextView tvCourseName;
-        private TextView tvEnrollmentDate;
-        private TextView tvStatus;
-        private TextView tvMessage;
-        private MaterialButton btnApprove;
-        private MaterialButton btnReject;
-        private MaterialButton btnViewDetails;
-        private View statusIndicator;
+        private TextView tvStudentName, tvStudentEmail, tvCourseName, tvEnrollmentDate, tvStatus, tvMessage;
+        private MaterialButton btnApprove, btnReject, btnViewDetails;
 
         public EnrollmentViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -72,22 +64,41 @@ public class EnrollmentAdapter extends RecyclerView.Adapter<EnrollmentAdapter.En
             btnApprove = itemView.findViewById(R.id.btn_approve);
             btnReject = itemView.findViewById(R.id.btn_reject);
             btnViewDetails = itemView.findViewById(R.id.btn_view_details);
-            statusIndicator = itemView.findViewById(R.id.status_indicator);
         }
 
         public void bind(Enrollment enrollment) {
-            tvStudentName.setText("👤 " + enrollment.getStudentName());
-            tvStudentEmail.setText("📧 " + enrollment.getStudentEmail());
-            tvCourseName.setText("📚 " + enrollment.getCourseName());
+            // Hiển thị tên học viên với fallback an toàn
+            String studentName = enrollment.getStudentName();
+            if (studentName == null || studentName.trim().isEmpty() || studentName.equals("Học viên")) {
+                studentName = "Đang tải...";
+            }
+            tvStudentName.setText("👤 " + studentName);
+
+            // Hiển thị email với fallback
+            String studentEmail = enrollment.getStudentEmail();
+            if (studentEmail == null || studentEmail.trim().isEmpty()) {
+                studentEmail = "Không có email";
+            }
+            tvStudentEmail.setText("📧 " + studentEmail);
+
+            // Hiển thị tên khóa học
+            String courseName = enrollment.getCourseName();
+            if (courseName == null || courseName.trim().isEmpty()) {
+                courseName = "Không có tên khóa học";
+            }
+            tvCourseName.setText("📚 " + courseName);
+
             tvStatus.setText(enrollment.getStatusDisplayName());
 
             if (enrollment.getEnrollmentDate() != null) {
                 SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
                 tvEnrollmentDate.setText("📅 " + sdf.format(enrollment.getEnrollmentDate()));
+            } else {
+                tvEnrollmentDate.setText("📅 Không có ngày");
             }
 
             // Show/hide message
-            if (enrollment.getMessage() != null && !enrollment.getMessage().isEmpty()) {
+            if (enrollment.getMessage() != null && !enrollment.getMessage().trim().isEmpty()) {
                 tvMessage.setVisibility(View.VISIBLE);
                 tvMessage.setText("💬 " + enrollment.getMessage());
             } else {
@@ -136,32 +147,24 @@ public class EnrollmentAdapter extends RecyclerView.Adapter<EnrollmentAdapter.En
 
             switch (status) {
                 case "PENDING":
-                    statusIndicator.setBackgroundResource(R.color.status_pending);
-                    tvStatus.setTextColor(itemView.getContext().getColor(R.color.status_pending));
                     btnApprove.setVisibility(View.VISIBLE);
                     btnReject.setVisibility(View.VISIBLE);
                     btnViewDetails.setVisibility(View.VISIBLE);
                     break;
 
                 case "APPROVED":
-                    statusIndicator.setBackgroundResource(R.color.status_active);
-                    tvStatus.setTextColor(itemView.getContext().getColor(R.color.status_active));
                     btnApprove.setVisibility(View.GONE);
                     btnReject.setVisibility(View.GONE);
                     btnViewDetails.setVisibility(View.VISIBLE);
                     break;
 
                 case "REJECTED":
-                    statusIndicator.setBackgroundResource(R.color.status_inactive);
-                    tvStatus.setTextColor(itemView.getContext().getColor(R.color.status_inactive));
                     btnApprove.setVisibility(View.GONE);
                     btnReject.setVisibility(View.GONE);
                     btnViewDetails.setVisibility(View.VISIBLE);
                     break;
 
                 default:
-                    statusIndicator.setBackgroundResource(R.color.text_secondary);
-                    tvStatus.setTextColor(itemView.getContext().getColor(R.color.text_secondary));
                     btnApprove.setVisibility(View.GONE);
                     btnReject.setVisibility(View.GONE);
                     btnViewDetails.setVisibility(View.VISIBLE);

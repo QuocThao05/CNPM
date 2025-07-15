@@ -130,12 +130,18 @@ public class LoginActivity extends AppCompatActivity {
                 .setTitle("Tạo tài khoản test")
                 .setMessage("Chọn loại tài khoản test muốn tạo:")
                 .setPositiveButton("Học viên", (dialog, which) -> {
+                    etEmail.setText("student@test.com");
+                    etPassword.setText("123456");
                     createAccount("student@test.com", "123456", "student");
                 })
                 .setNeutralButton("Giáo viên", (dialog, which) -> {
+                    etEmail.setText("teacher@test.com");
+                    etPassword.setText("123456");
                     createAccount("teacher@test.com", "123456", "teacher");
                 })
                 .setNegativeButton("Admin", (dialog, which) -> {
+                    etEmail.setText("admin@test.com");
+                    etPassword.setText("123456");
                     createAccount("admin@test.com", "123456", "admin");
                 })
                 .show();
@@ -196,56 +202,54 @@ public class LoginActivity extends AppCompatActivity {
         db.collection("users").document(userId)
                 .get()
                 .addOnSuccessListener(documentSnapshot -> {
-                    android.util.Log.d("LoginActivity", "User document exists: " + documentSnapshot.exists());
+                    btnLogin.setEnabled(true);
+                    btnLogin.setText("Đăng nhập");
 
                     if (documentSnapshot.exists()) {
                         String role = documentSnapshot.getString("role");
-                        android.util.Log.d("LoginActivity", "User role: " + role);
-                        redirectToRoleActivity(role);
-                    } else {
-                        // User document doesn't exist, create default student account
-                        android.util.Log.w("LoginActivity", "User document not found, creating default student profile");
-                        Map<String, Object> defaultUser = new HashMap<>();
-                        defaultUser.put("email", mAuth.getCurrentUser().getEmail());
-                        defaultUser.put("role", "student");
-                        defaultUser.put("name", "Học viên");
-                        defaultUser.put("createdAt", new java.util.Date());
+                        android.util.Log.d("LoginActivity", "User role found: " + role);
 
-                        db.collection("users").document(userId)
-                                .set(defaultUser)
-                                .addOnSuccessListener(aVoid -> redirectToRoleActivity("student"))
-                                .addOnFailureListener(e -> {
-                                    Toast.makeText(this, "Lỗi tạo hồ sơ người dùng", Toast.LENGTH_SHORT).show();
-                                    redirectToRoleActivity("student"); // Default fallback
-                                });
+                        if (role != null) {
+                            redirectToRoleActivity(role);
+                        } else {
+                            android.util.Log.w("LoginActivity", "User role is null, defaulting to student");
+                            redirectToRoleActivity("student");
+                        }
+                    } else {
+                        android.util.Log.w("LoginActivity", "User document does not exist, creating default student profile");
+                        // Create user document if it doesn't exist
+                        saveUserToFirestore(userId, mAuth.getCurrentUser().getEmail(), "student");
                     }
                 })
                 .addOnFailureListener(e -> {
-                    android.util.Log.e("LoginActivity", "Error getting user role", e);
-                    Toast.makeText(this, "Lỗi lấy thông tin người dùng: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                     btnLogin.setEnabled(true);
                     btnLogin.setText("Đăng nhập");
+                    android.util.Log.e("LoginActivity", "Error getting user role", e);
+                    Toast.makeText(this, "Lỗi lấy thông tin người dùng: " + e.getMessage(), Toast.LENGTH_LONG).show();
                 });
     }
 
     private void redirectToRoleActivity(String role) {
-        btnLogin.setEnabled(true);
-        btnLogin.setText("Đăng nhập");
+        android.util.Log.d("LoginActivity", "Redirecting to activity for role: " + role);
 
         Intent intent;
-        switch (role != null ? role : "student") {
+        switch (role.toLowerCase()) {
             case "admin":
                 intent = new Intent(this, AdminDashboardActivity.class);
+                android.util.Log.d("LoginActivity", "Redirecting to AdminDashboardActivity");
                 break;
             case "teacher":
                 intent = new Intent(this, TeacherDashboardActivity.class);
+                android.util.Log.d("LoginActivity", "Redirecting to TeacherDashboardActivity");
                 break;
             case "student":
             default:
                 intent = new Intent(this, StudentDashboardActivity.class);
+                android.util.Log.d("LoginActivity", "Redirecting to StudentDashboardActivity");
                 break;
         }
 
+        // Clear the activity stack so user can't go back to login
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
         finish();

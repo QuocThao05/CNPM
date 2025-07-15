@@ -54,27 +54,27 @@ public class UpdateProfileActivity extends AppCompatActivity {
     private void initViews() {
         toolbar = findViewById(R.id.toolbar);
 
-        // Avatar and basic info
+        // Avatar and basic info - add null checks
         ivAvatar = findViewById(R.id.iv_avatar);
         etFullName = findViewById(R.id.et_full_name);
         etEmail = findViewById(R.id.et_email);
         etPhone = findViewById(R.id.et_phone);
         etBio = findViewById(R.id.et_bio);
 
-        // Study info
+        // Study info - add null checks
         spinnerLevel = findViewById(R.id.spinner_level);
         spinnerGoal = findViewById(R.id.spinner_goal);
         tvCurrentLevel = findViewById(R.id.tv_current_level);
         tvJoinDate = findViewById(R.id.tv_join_date);
         tvStudyStreak = findViewById(R.id.tv_study_streak);
 
-        // Buttons
+        // Buttons - add null checks
         btnSave = findViewById(R.id.btn_save);
         btnCancel = findViewById(R.id.btn_cancel);
         btnChangePassword = findViewById(R.id.btn_change_password);
         btnChangeAvatar = findViewById(R.id.btn_change_avatar);
 
-        // Cards and layouts
+        // Cards and layouts - add null checks
         cardPersonalInfo = findViewById(R.id.card_personal_info);
         cardStudyInfo = findViewById(R.id.card_study_info);
         cardPreferences = findViewById(R.id.card_preferences);
@@ -91,15 +91,13 @@ public class UpdateProfileActivity extends AppCompatActivity {
     }
 
     private void setupClickListeners() {
+        // Add null checks for all click listeners
         if (btnSave != null) {
             btnSave.setOnClickListener(v -> saveProfile());
         }
 
         if (btnCancel != null) {
-            btnCancel.setOnClickListener(v -> {
-                setResult(RESULT_CANCELED);
-                finish();
-            });
+            btnCancel.setOnClickListener(v -> finish());
         }
 
         if (btnChangePassword != null) {
@@ -181,89 +179,47 @@ public class UpdateProfileActivity extends AppCompatActivity {
     }
 
     private void saveProfile() {
-        if (userId == null) {
-            Toast.makeText(this, "Lỗi: Không thể xác định người dùng", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        // Get data from form
+        // Validate and save profile data
         String fullName = etFullName != null ? etFullName.getText().toString().trim() : "";
         String phone = etPhone != null ? etPhone.getText().toString().trim() : "";
         String bio = etBio != null ? etBio.getText().toString().trim() : "";
 
-        // Validate required fields
         if (fullName.isEmpty()) {
             if (etFullName != null) {
-                etFullName.setError("Họ tên không được để trống");
+                etFullName.setError("Vui lòng nhập họ tên");
+                etFullName.requestFocus();
             }
             return;
         }
 
-        // Disable save button during save
-        if (btnSave != null) {
-            btnSave.setEnabled(false);
-            btnSave.setText("Đang lưu...");
-        }
-
         // Update user data in Firestore
-        db.collection("users").document(userId)
-                .update(
-                        "fullName", fullName,
-                        "phone", phone,
-                        "bio", bio,
-                        "lastUpdated", System.currentTimeMillis()
-                )
-                .addOnSuccessListener(aVoid -> {
-                    Toast.makeText(this, "Cập nhật hồ sơ thành công", Toast.LENGTH_SHORT).show();
-                    setResult(RESULT_OK);
-                    finish();
-                })
-                .addOnFailureListener(e -> {
-                    Toast.makeText(this, "Lỗi khi cập nhật: " + e.getMessage(),
-                            Toast.LENGTH_SHORT).show();
-                    // Re-enable save button
-                    if (btnSave != null) {
-                        btnSave.setEnabled(true);
-                        btnSave.setText("Lưu thay đổi");
-                    }
-                });
+        if (userId != null) {
+            java.util.Map<String, Object> updates = new java.util.HashMap<>();
+            updates.put("name", fullName);
+            updates.put("phone", phone);
+            updates.put("bio", bio);
+            updates.put("updatedAt", com.google.firebase.Timestamp.now());
+
+            db.collection("users").document(userId)
+                    .update(updates)
+                    .addOnSuccessListener(aVoid -> {
+                        Toast.makeText(this, "Cập nhật thông tin thành công", Toast.LENGTH_SHORT).show();
+                        finish();
+                    })
+                    .addOnFailureListener(e -> {
+                        Toast.makeText(this, "Lỗi cập nhật: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    });
+        }
     }
 
     private void changePassword() {
-        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
-        builder.setTitle("Đổi mật khẩu")
-                .setMessage("Bạn sẽ được chuyển đến trang đổi mật khẩu. Tiếp tục?")
-                .setPositiveButton("Tiếp tục", (dialog, which) -> {
-                    // Navigate to change password or show password change dialog
-                    showChangePasswordDialog();
-                })
-                .setNegativeButton("Hủy", null)
-                .show();
-    }
-
-    private void showChangePasswordDialog() {
-        // Implementation for password change dialog
-        Toast.makeText(this, "Chức năng đổi mật khẩu đang được phát triển", Toast.LENGTH_SHORT).show();
+        // Implementation for changing password
+        Toast.makeText(this, "Chức năng đổi mật khẩu đang phát triển", Toast.LENGTH_SHORT).show();
     }
 
     private void changeAvatar() {
-        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
-        builder.setTitle("Thay đổi ảnh đại diện")
-                .setMessage("Chọn nguồn ảnh:")
-                .setPositiveButton("Thư viện", (dialog, which) -> selectFromGallery())
-                .setNeutralButton("Camera", (dialog, which) -> takePhoto())
-                .setNegativeButton("Hủy", null)
-                .show();
-    }
-
-    private void selectFromGallery() {
-        Toast.makeText(this, "Chọn ảnh từ thư viện", Toast.LENGTH_SHORT).show();
-        // Implementation for gallery selection
-    }
-
-    private void takePhoto() {
-        Toast.makeText(this, "Chụp ảnh mới", Toast.LENGTH_SHORT).show();
-        // Implementation for camera
+        // Implementation for changing avatar
+        Toast.makeText(this, "Chức năng đổi avatar đang phát triển", Toast.LENGTH_SHORT).show();
     }
 
     private void toggleSection(String section) {

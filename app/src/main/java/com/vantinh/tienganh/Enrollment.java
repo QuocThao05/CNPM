@@ -49,8 +49,24 @@ public class Enrollment {
     public String getStudentId() { return studentId; }
     public void setStudentId(String studentId) { this.studentId = studentId; }
 
-    public String getStudentName() { return studentName; }
-    public void setStudentName(String studentName) { this.studentName = studentName; }
+    public String getStudentName() {
+        // Xử lý trường hợp studentName bị null, thử lấy từ trường name
+        if (studentName != null && !studentName.isEmpty()) {
+            return studentName;
+        }
+        // Fallback: nếu có trường name (từ collection users)
+        return name != null ? name : "Học viên";
+    }
+
+    public void setStudentName(String studentName) {
+        this.studentName = studentName;
+    }
+
+    // Thêm trường name để tương thích với collection users
+    private String name;
+
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
 
     public String getStudentEmail() { return studentEmail; }
     public void setStudentEmail(String studentEmail) { this.studentEmail = studentEmail; }

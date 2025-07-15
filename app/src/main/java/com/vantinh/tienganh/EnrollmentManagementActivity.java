@@ -131,10 +131,10 @@ public class EnrollmentManagementActivity extends AppCompatActivity {
 
         String currentUserId = mAuth.getCurrentUser().getUid();
 
+        // Sử dụng query đơn giản hơn để tránh lỗi index
         db.collection("enrollments")
             .whereEqualTo("teacherId", currentUserId)
             .whereEqualTo("status", currentTab)
-            .orderBy("enrollmentDate", com.google.firebase.firestore.Query.Direction.DESCENDING)
             .get()
             .addOnCompleteListener(task -> {
                 if (task.isSuccessful()) {
@@ -142,123 +142,172 @@ public class EnrollmentManagementActivity extends AppCompatActivity {
                     for (QueryDocumentSnapshot document : task.getResult()) {
                         Enrollment enrollment = document.toObject(Enrollment.class);
                         enrollment.setId(document.getId());
+
+                        // Kiểm tra và lấy thông tin học viên nếu bị thiếu
+                        if (enrollment.getStudentName() == null || enrollment.getStudentName().equals("Học viên")) {
+                            loadStudentInfo(enrollment);
+                        }
+
                         enrollmentList.add(enrollment);
                     }
 
-                    if (enrollmentList.isEmpty()) {
-                        layoutNoEnrollments.setVisibility(View.VISIBLE);
-                        rvEnrollments.setVisibility(View.GONE);
-                    } else {
-                        layoutNoEnrollments.setVisibility(View.GONE);
-                        rvEnrollments.setVisibility(View.VISIBLE);
-                    }
-
-                    enrollmentAdapter.notifyDataSetChanged();
+                    updateUI();
                 } else {
-                    Toast.makeText(this, "Lỗi khi tải danh sách đăng ký", Toast.LENGTH_SHORT).show();
+                    android.util.Log.e("EnrollmentManagement", "Error getting enrollments", task.getException());
+                    Toast.makeText(this, "Lỗi tải danh sách đăng ký: " +
+                        (task.getException() != null ? task.getException().getMessage() : "Unknown error"),
+                        Toast.LENGTH_SHORT).show();
                 }
             });
     }
 
-    private void showRejectDialog(Enrollment enrollment) {
-        android.widget.EditText editText = new android.widget.EditText(this);
-        editText.setHint("Lý do từ chối (tùy chọn)");
-        editText.setLines(3);
-
-        new android.app.AlertDialog.Builder(this)
-            .setTitle("Từ chối đăng ký")
-            .setMessage("Bạn có chắc chắn muốn từ chối đăng ký của " + enrollment.getStudentName() + "?")
-            .setView(editText)
-            .setPositiveButton("Từ chối", (dialog, which) -> {
-                String reason = editText.getText().toString().trim();
-                if (reason.isEmpty()) {
-                    reason = "Không đủ điều kiện tham gia khóa học";
-                }
-                updateEnrollmentStatus(enrollment, "REJECTED", reason);
-            })
-            .setNegativeButton("Hủy", null)
-            .show();
-    }
-
-    private void showEnrollmentDetails(Enrollment enrollment) {
-        String details = "Thông tin đăng ký:\n\n" +
-                        "Học viên: " + enrollment.getStudentName() + "\n" +
-                        "Email: " + enrollment.getStudentEmail() + "\n" +
-                        "Khóa học: " + enrollment.getCourseName() + "\n" +
-                        "Ngày đăng ký: " + android.text.format.DateFormat.format("dd/MM/yyyy HH:mm", enrollment.getEnrollmentDate()) + "\n" +
-                        "Trạng thái: " + enrollment.getStatusDisplayName();
-
-        if (enrollment.getMessage() != null && !enrollment.getMessage().isEmpty()) {
-            details += "\nTin nhắn: " + enrollment.getMessage();
+    private void loadStudentInfo(Enrollment enrollment) {
+        if (enrollment.getStudentId() == null || enrollment.getStudentId().isEmpty()) {
+            return;
         }
 
-        if (enrollment.getApprovedDate() != null) {
-            details += "\nNgày duyệt: " + android.text.format.DateFormat.format("dd/MM/yyyy HH:mm", enrollment.getApprovedDate());
-        }
-
-        new android.app.AlertDialog.Builder(this)
-            .setTitle("Chi tiết đăng ký")
-            .setMessage(details)
-            .setPositiveButton("OK", null)
-            .show();
-    }
-
-    private void updateEnrollmentStatus(Enrollment enrollment, String newStatus, String message) {
-        if (enrollment.getId() == null) return;
-
-        // Update enrollment status
-        db.collection("enrollments").document(enrollment.getId())
-            .update(
-                "status", newStatus,
-                "message", message,
-                "approvedDate", new Date()
-            )
-            .addOnSuccessListener(aVoid -> {
-                String statusMessage = newStatus.equals("APPROVED") ?
-                    "Đã duyệt đăng ký của " + enrollment.getStudentName() :
-                    "Đã từ chối đăng ký của " + enrollment.getStudentName();
-
-                Toast.makeText(this, statusMessage, Toast.LENGTH_SHORT).show();
-
-                // Update course enrolled students count if approved
-                if (newStatus.equals("APPROVED")) {
-                    updateCourseEnrollmentCount(enrollment.getCourseId(), 1);
-                }
-
-                // Reload data
-                loadEnrollments();
-            })
-            .addOnFailureListener(e -> {
-                Toast.makeText(this, "Lỗi khi cập nhật: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-            });
-    }
-
-    private void updateCourseEnrollmentCount(String courseId, int increment) {
-        db.collection("courses").document(courseId)
+        db.collection("users").document(enrollment.getStudentId())
             .get()
             .addOnSuccessListener(documentSnapshot -> {
                 if (documentSnapshot.exists()) {
-                    Long currentCount = documentSnapshot.getLong("enrolledStudents");
-                    int newCount = (currentCount != null ? currentCount.intValue() : 0) + increment;
+                    String name = documentSnapshot.getString("name");
+                    String email = documentSnapshot.getString("email");
 
-                    db.collection("courses").document(courseId)
-                        .update("enrolledStudents", Math.max(0, newCount));
+                    if (name != null && !name.isEmpty()) {
+                        enrollment.setStudentName(name);
+                    }
+
+                    if (email != null && !email.isEmpty() &&
+                        (enrollment.getStudentEmail() == null || enrollment.getStudentEmail().isEmpty())) {
+                        enrollment.setStudentEmail(email);
+                    }
+
+                    // Cập nhật lại enrollment trong Firestore để lần sau không cần load lại
+                    updateEnrollmentInfo(enrollment);
+
+                    // Refresh adapter
+                    enrollmentAdapter.notifyDataSetChanged();
                 }
+            })
+            .addOnFailureListener(e -> {
+                android.util.Log.e("EnrollmentManagement", "Error loading student info", e);
+            });
+    }
+
+    private void updateEnrollmentInfo(Enrollment enrollment) {
+        if (enrollment.getId() == null || enrollment.getId().isEmpty()) {
+            return;
+        }
+
+        java.util.Map<String, Object> updates = new java.util.HashMap<>();
+        if (enrollment.getStudentName() != null && !enrollment.getStudentName().equals("Học viên")) {
+            updates.put("studentName", enrollment.getStudentName());
+        }
+        if (enrollment.getStudentEmail() != null && !enrollment.getStudentEmail().isEmpty()) {
+            updates.put("studentEmail", enrollment.getStudentEmail());
+        }
+
+        if (!updates.isEmpty()) {
+            db.collection("enrollments").document(enrollment.getId())
+                .update(updates)
+                .addOnSuccessListener(aVoid -> {
+                    android.util.Log.d("EnrollmentManagement", "Student info updated successfully");
+                })
+                .addOnFailureListener(e -> {
+                    android.util.Log.e("EnrollmentManagement", "Error updating student info", e);
+                });
+        }
+    }
+
+    private void updateUI() {
+        if (enrollmentList.isEmpty()) {
+            layoutNoEnrollments.setVisibility(View.VISIBLE);
+            rvEnrollments.setVisibility(View.GONE);
+        } else {
+            layoutNoEnrollments.setVisibility(View.GONE);
+            rvEnrollments.setVisibility(View.VISIBLE);
+        }
+
+        enrollmentAdapter.notifyDataSetChanged();
+    }
+
+    private void showRejectDialog(Enrollment enrollment) {
+        androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(this);
+        builder.setTitle("Từ chối đăng ký");
+        builder.setMessage("Bạn có chắc chắn muốn từ chối đăng ký của " + enrollment.getStudentName() + "?");
+
+        builder.setPositiveButton("Từ chối", (dialog, which) -> {
+            updateEnrollmentStatus(enrollment, "REJECTED", "Đã từ chối đăng ký");
+        });
+
+        builder.setNegativeButton("Hủy", (dialog, which) -> dialog.dismiss());
+
+        builder.show();
+    }
+
+    private void showEnrollmentDetails(Enrollment enrollment) {
+        androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(this);
+        builder.setTitle("Chi tiết đăng ký");
+
+        StringBuilder details = new StringBuilder();
+        details.append("Học viên: ").append(enrollment.getStudentName()).append("\n");
+        details.append("Email: ").append(enrollment.getStudentEmail()).append("\n");
+        details.append("Khóa học: ").append(enrollment.getCourseName()).append("\n");
+        details.append("Ngày đăng ký: ").append(enrollment.getEnrollmentDate()).append("\n");
+        details.append("Trạng thái: ").append(getStatusText(enrollment.getStatus())).append("\n");
+
+        if (enrollment.getMessage() != null && !enrollment.getMessage().isEmpty()) {
+            details.append("Lời nhắn: ").append(enrollment.getMessage()).append("\n");
+        }
+
+        builder.setMessage(details.toString());
+        builder.setPositiveButton("Đóng", (dialog, which) -> dialog.dismiss());
+
+        if ("PENDING".equals(enrollment.getStatus())) {
+            builder.setNeutralButton("Chấp nhận", (dialog, which) -> {
+                updateEnrollmentStatus(enrollment, "APPROVED", "Đăng ký đã được chấp nhận");
+            });
+            builder.setNegativeButton("Từ chối", (dialog, which) -> {
+                updateEnrollmentStatus(enrollment, "REJECTED", "Đã từ chối đăng ký");
+            });
+        }
+
+        builder.show();
+    }
+
+    private String getStatusText(String status) {
+        switch (status) {
+            case "PENDING": return "Chờ duyệt";
+            case "APPROVED": return "Đã duyệt";
+            case "REJECTED": return "Từ chối";
+            default: return status;
+        }
+    }
+
+    private void updateEnrollmentStatus(Enrollment enrollment, String status, String message) {
+        if (enrollment.getId() == null || enrollment.getId().isEmpty()) {
+            Toast.makeText(this, "Lỗi: Không tìm thấy ID đăng ký", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        db.collection("enrollments").document(enrollment.getId())
+            .update("status", status, "updatedAt", new Date())
+            .addOnSuccessListener(aVoid -> {
+                Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+                loadEnrollments(); // Reload the list
+            })
+            .addOnFailureListener(e -> {
+                android.util.Log.e("EnrollmentManagement", "Error updating enrollment status", e);
+                Toast.makeText(this, "Lỗi cập nhật trạng thái: " + e.getMessage(), Toast.LENGTH_SHORT).show();
             });
     }
 
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         if (item.getItemId() == android.R.id.home) {
-            finish();
+            onBackPressed();
             return true;
         }
         return super.onOptionsItemSelected(item);
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        loadEnrollments();
     }
 }

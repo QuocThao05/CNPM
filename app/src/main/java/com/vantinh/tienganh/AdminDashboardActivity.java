@@ -47,43 +47,36 @@ public class AdminDashboardActivity extends AppCompatActivity {
     }
 
     private void initViews() {
-        try {
-            // Toolbar
-            toolbar = findViewById(R.id.toolbar);
+        // Core views that should exist
+        toolbar = findViewById(R.id.toolbar);
+        bottomNavigation = findViewById(R.id.bottom_navigation);
 
-            // Text views for statistics
-            tvWelcome = findViewById(R.id.tv_welcome);
-            tvTotalUsers = findViewById(R.id.tv_total_users);
-            tvTotalTeachers = findViewById(R.id.tv_total_teachers);
-            tvTotalStudents = findViewById(R.id.tv_total_students);
-            tvSystemHealth = findViewById(R.id.tv_system_health);
+        // Text views for statistics - add null checks
+        tvWelcome = findViewById(R.id.tv_welcome);
+        tvTotalUsers = findViewById(R.id.tv_total_users);
+        tvTotalTeachers = findViewById(R.id.tv_total_teachers);
+        tvTotalStudents = findViewById(R.id.tv_total_students);
+        tvSystemHealth = findViewById(R.id.tv_system_health);
 
-            // RecyclerViews
-            rvRecentActivities = findViewById(R.id.rv_recent_activities);
-            rvSystemAlerts = findViewById(R.id.rv_system_alerts);
+        // RecyclerViews - may not exist in layout
+        rvRecentActivities = findViewById(R.id.rv_recent_activities);
+        rvSystemAlerts = findViewById(R.id.rv_system_alerts);
 
-            // Bottom navigation
-            bottomNavigation = findViewById(R.id.bottom_navigation);
+        // Management cards - add null checks
+        cardUserManagement = findViewById(R.id.card_user_management);
+        cardSystemStats = findViewById(R.id.card_system_stats);
+        cardContentManagement = findViewById(R.id.card_content_management);
+        cardReports = findViewById(R.id.card_reports);
 
-            // Management cards
-            cardUserManagement = findViewById(R.id.card_user_management);
-            cardSystemStats = findViewById(R.id.card_system_stats);
-            cardContentManagement = findViewById(R.id.card_content_management);
-            cardReports = findViewById(R.id.card_reports);
+        // Floating action button - may not exist
+        fabQuickAction = findViewById(R.id.fab_quick_action);
 
-            // Floating action button
-            fabQuickAction = findViewById(R.id.fab_quick_action);
-
-            // Setup RecyclerViews
-            if (rvRecentActivities != null) {
-                rvRecentActivities.setLayoutManager(new LinearLayoutManager(this));
-            }
-            if (rvSystemAlerts != null) {
-                rvSystemAlerts.setLayoutManager(new LinearLayoutManager(this));
-            }
-
-        } catch (Exception e) {
-            android.util.Log.e("AdminDashboard", "Error initializing views: " + e.getMessage());
+        // Setup RecyclerViews if they exist
+        if (rvRecentActivities != null) {
+            rvRecentActivities.setLayoutManager(new LinearLayoutManager(this));
+        }
+        if (rvSystemAlerts != null) {
+            rvSystemAlerts.setLayoutManager(new LinearLayoutManager(this));
         }
     }
 
@@ -98,18 +91,17 @@ public class AdminDashboardActivity extends AppCompatActivity {
     }
 
     private void setupClickListeners() {
-        // Management cards click listeners
+        // Management cards with null checks
         if (cardUserManagement != null) {
             cardUserManagement.setOnClickListener(v -> {
-                Intent intent = new Intent(this, AdminAccountManagementActivity.class);
-                startActivity(intent);
+                startActivity(new Intent(this, SystemStatisticsActivity.class));
             });
         }
 
         if (cardSystemStats != null) {
             cardSystemStats.setOnClickListener(v -> {
                 Intent intent = new Intent(this, SystemStatisticsActivity.class);
-                intent.putExtra("mode", "admin");
+                intent.putExtra("mode", "stats");
                 intent.putExtra("title", "Thống kê hệ thống");
                 startActivity(intent);
             });
@@ -117,10 +109,7 @@ public class AdminDashboardActivity extends AppCompatActivity {
 
         if (cardContentManagement != null) {
             cardContentManagement.setOnClickListener(v -> {
-                Intent intent = new Intent(this, ContentCreationActivity.class);
-                intent.putExtra("mode", "admin");
-                intent.putExtra("title", "Quản lý nội dung");
-                startActivity(intent);
+                startActivity(new Intent(this, CourseManagementActivity.class));
             });
         }
 
@@ -133,35 +122,24 @@ public class AdminDashboardActivity extends AppCompatActivity {
             });
         }
 
-        // Quick action floating button
         if (fabQuickAction != null) {
-            fabQuickAction.setOnClickListener(v -> showQuickActionMenu());
+            fabQuickAction.setOnClickListener(v -> {
+                showQuickActionDialog();
+            });
         }
     }
 
-    private void showQuickActionMenu() {
+    private void showQuickActionDialog() {
         android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
-        builder.setTitle("Thao tác nhanh - Admin")
-                .setMessage("Chọn thao tác muốn thực hiện:")
+        builder.setTitle("Hành động nhanh")
+                .setMessage("Chọn hành động muốn thực hiện:")
                 .setPositiveButton("Tạo tài khoản", (dialog, which) -> {
-                    Intent intent = new Intent(this, RegisterActivity.class);
-                    intent.putExtra("mode", "admin_create");
+                    startActivity(new Intent(this, RegisterActivity.class));
+                })
+                .setNeutralButton("Xem báo cáo", (dialog, which) -> {
+                    Intent intent = new Intent(this, SystemStatisticsActivity.class);
+                    intent.putExtra("mode", "reports");
                     startActivity(intent);
-                })
-                .setNeutralButton("Backup hệ thống", (dialog, which) -> {
-                    performSystemBackup();
-                })
-                .setNegativeButton("Hủy", null)
-                .show();
-    }
-
-    private void performSystemBackup() {
-        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
-        builder.setTitle("Sao lưu hệ thống")
-                .setMessage("Bạn có muốn thực hiện sao lưu toàn bộ dữ liệu hệ thống?")
-                .setPositiveButton("Sao lưu", (dialog, which) -> {
-                    Toast.makeText(this, "Đang thực hiện sao lưu hệ thống...", Toast.LENGTH_LONG).show();
-                    // Implementation for system backup
                 })
                 .setNegativeButton("Hủy", null)
                 .show();
@@ -175,16 +153,18 @@ public class AdminDashboardActivity extends AppCompatActivity {
                     // Already on dashboard
                     return true;
                 } else if (itemId == R.id.nav_users) {
-                    Intent intent = new Intent(this, AdminAccountManagementActivity.class);
-                    startActivity(intent);
+                    startActivity(new Intent(this, SystemStatisticsActivity.class));
                     return true;
-                } else if (itemId == R.id.nav_reports) {
+                } else if (itemId == R.id.nav_courses) {
+                    startActivity(new Intent(this, CourseManagementActivity.class));
+                    return true;
+                } else if (itemId == R.id.nav_analytics) {
                     Intent intent = new Intent(this, SystemStatisticsActivity.class);
-                    intent.putExtra("mode", "reports");
+                    intent.putExtra("mode", "analytics");
                     startActivity(intent);
                     return true;
                 } else if (itemId == R.id.nav_settings) {
-                    openSystemSettings();
+                    startActivity(new Intent(this, UpdateProfileActivity.class));
                     return true;
                 }
                 return false;
@@ -192,35 +172,72 @@ public class AdminDashboardActivity extends AppCompatActivity {
         }
     }
 
-    private void openSystemSettings() {
-        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
-        builder.setTitle("Cài đặt hệ thống")
-                .setMessage("Chọn cài đặt muốn thay đổi:")
-                .setPositiveButton("Cài đặt chung", (dialog, which) -> {
-                    Intent intent = new Intent(this, UpdateProfileActivity.class);
-                    intent.putExtra("mode", "system_settings");
-                    startActivity(intent);
-                })
-                .setNeutralButton("Bảo mật", (dialog, which) -> {
-                    showSecuritySettings();
-                })
-                .setNegativeButton("Đóng", null)
-                .show();
+    private void loadAdminData() {
+        // Load welcome message
+        if (mAuth.getCurrentUser() != null) {
+            String adminId = mAuth.getCurrentUser().getUid();
+            db.collection("users").document(adminId)
+                    .get()
+                    .addOnSuccessListener(documentSnapshot -> {
+                        if (documentSnapshot.exists()) {
+                            String name = documentSnapshot.getString("name");
+                            if (name != null && !name.isEmpty() && tvWelcome != null) {
+                                tvWelcome.setText("Chào mừng, " + name + "!");
+                            }
+                        }
+                    })
+                    .addOnFailureListener(e -> {
+                        Toast.makeText(this, "Lỗi tải thông tin admin", Toast.LENGTH_SHORT).show();
+                    });
+        }
+
+        // Load system statistics
+        loadUserStatistics();
+        loadSystemHealth();
     }
 
-    private void showSecuritySettings() {
-        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
-        builder.setTitle("Cài đặt bảo mật")
-                .setMessage("Cài đặt bảo mật hiện tại:\n\n" +
-                        "• Xác thực 2 bước: Bật\n" +
-                        "• Mã hóa dữ liệu: Bật\n" +
-                        "• Đăng nhập tự động: Tắt\n" +
-                        "• Lịch sử đăng nhập: 30 ngày")
-                .setPositiveButton("Thay đổi", (dialog, which) -> {
-                    Toast.makeText(this, "Chức năng đang phát triển", Toast.LENGTH_SHORT).show();
+    private void loadUserStatistics() {
+        // Load total users
+        db.collection("users")
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    int totalUsers = queryDocumentSnapshots.size();
+                    int totalTeachers = 0;
+                    int totalStudents = 0;
+
+                    // Count teachers and students
+                    for (com.google.firebase.firestore.QueryDocumentSnapshot doc : queryDocumentSnapshots) {
+                        String role = doc.getString("role");
+                        if ("teacher".equals(role)) {
+                            totalTeachers++;
+                        } else if ("student".equals(role)) {
+                            totalStudents++;
+                        }
+                    }
+
+                    // Update UI
+                    if (tvTotalUsers != null) {
+                        tvTotalUsers.setText(String.valueOf(totalUsers));
+                    }
+                    if (tvTotalTeachers != null) {
+                        tvTotalTeachers.setText(String.valueOf(totalTeachers));
+                    }
+                    if (tvTotalStudents != null) {
+                        tvTotalStudents.setText(String.valueOf(totalStudents));
+                    }
                 })
-                .setNegativeButton("Đóng", null)
-                .show();
+                .addOnFailureListener(e -> {
+                    // Set default values on error
+                    if (tvTotalUsers != null) tvTotalUsers.setText("0");
+                    if (tvTotalTeachers != null) tvTotalTeachers.setText("0");
+                    if (tvTotalStudents != null) tvTotalStudents.setText("0");
+                });
+    }
+
+    private void loadSystemHealth() {
+        if (tvSystemHealth != null) {
+            tvSystemHealth.setText("Hệ thống hoạt động bình thường");
+        }
     }
 
     @Override
@@ -302,48 +319,15 @@ public class AdminDashboardActivity extends AppCompatActivity {
                 .show();
     }
 
-    private void loadAdminData() {
-        if (mAuth.getCurrentUser() != null) {
-            String userId = mAuth.getCurrentUser().getUid();
-            if (userId != null) {
-                db.collection("users").document(userId)
-                        .get()
-                        .addOnSuccessListener(documentSnapshot -> {
-                            if (documentSnapshot.exists()) {
-                                String fullName = documentSnapshot.getString("fullName");
-                                if (fullName != null && tvWelcome != null) {
-                                    tvWelcome.setText("Chào mừng, Admin " + fullName + "!");
-                                }
-                            }
-                        })
-                        .addOnFailureListener(e -> {
-                            if (tvWelcome != null) {
-                                tvWelcome.setText("Chào mừng, Quản trị viên!");
-                            }
-                        });
-
-                loadSystemStats();
-            }
-        } else {
-            Intent intent = new Intent(AdminDashboardActivity.this, LoginActivity.class);
-            startActivity(intent);
-            finish();
-        }
-    }
-
-    private void loadSystemStats() {
-        // Load system statistics - sample data
-        if (tvTotalUsers != null) {
-            tvTotalUsers.setText("1,234 người dùng");
-        }
-        if (tvTotalTeachers != null) {
-            tvTotalTeachers.setText("56 giáo viên");
-        }
-        if (tvTotalStudents != null) {
-            tvTotalStudents.setText("1,178 học viên");
-        }
-        if (tvSystemHealth != null) {
-            tvSystemHealth.setText("Hệ thống: Hoạt động tốt");
-        }
+    private void performSystemBackup() {
+        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
+        builder.setTitle("Sao lưu hệ thống")
+                .setMessage("Bạn có muốn thực hiện sao lưu toàn bộ dữ liệu hệ thống?")
+                .setPositiveButton("Sao lưu", (dialog, which) -> {
+                    Toast.makeText(this, "Đang thực hiện sao lưu hệ thống...", Toast.LENGTH_LONG).show();
+                    // Implementation for system backup
+                })
+                .setNegativeButton("Hủy", null)
+                .show();
     }
 }

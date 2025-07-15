@@ -7,142 +7,130 @@
     android:layout_margin="8dp"
     app:cardCornerRadius="12dp"
     app:cardElevation="4dp"
+    android:clickable="true"
+    android:focusable="true"
     android:foreground="?android:attr/selectableItemBackground">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:orientation="vertical"
+        android:padding="16dp">
 
-        <!-- Status Indicator -->
-        <View
-            android:id="@+id/status_indicator"
-            android:layout_width="4dp"
-            android:layout_height="match_parent"
-            android:background="@color/status_pending" />
-
-        <!-- Content -->
+        <!-- Header with student info -->
         <LinearLayout
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:padding="16dp">
+            android:orientation="horizontal"
+            android:layout_marginBottom="8dp">
 
-            <!-- Student Info -->
             <LinearLayout
-                android:layout_width="match_parent"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginBottom="8dp">
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:id="@+id/tv_student_name"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="👤 Student Name"
-                        android:textSize="16sp"
-                        android:textStyle="bold"
-                        android:textColor="@color/text_primary"
-                        android:layout_marginBottom="4dp" />
-
-                    <TextView
-                        android:id="@+id/tv_student_email"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="📧 student@email.com"
-                        android:textSize="14sp"
-                        android:textColor="@color/text_secondary" />
-
-                </LinearLayout>
+                android:layout_weight="1"
+                android:orientation="vertical">
 
                 <TextView
-                    android:id="@+id/tv_status"
+                    android:id="@+id/tv_student_name"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Chờ duyệt"
-                    android:textSize="12sp"
+                    android:text="Nguyễn Văn A"
+                    android:textSize="18sp"
                     android:textStyle="bold"
-                    android:background="@drawable/bg_status_badge"
-                    android:paddingHorizontal="8dp"
-                    android:paddingVertical="4dp" />
+                    android:textColor="@android:color/black" />
+
+                <TextView
+                    android:id="@+id/tv_student_email"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="student@email.com"
+                    android:textSize="14sp"
+                    android:textColor="@android:color/darker_gray"
+                    android:layout_marginTop="2dp" />
 
             </LinearLayout>
 
-            <!-- Course Info -->
             <TextView
-                android:id="@+id/tv_course_name"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="📚 Course Name"
-                android:textSize="14sp"
-                android:textColor="@color/accent_color"
-                android:textStyle="bold"
-                android:layout_marginBottom="8dp" />
-
-            <!-- Enrollment Date -->
-            <TextView
-                android:id="@+id/tv_enrollment_date"
+                android:id="@+id/tv_status"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="📅 15/07/2024 14:30"
+                android:text="Chờ duyệt"
                 android:textSize="12sp"
-                android:textColor="@color/text_secondary"
-                android:layout_marginBottom="8dp" />
+                android:textStyle="bold"
+                android:textColor="@android:color/holo_orange_dark"
+                android:background="@drawable/bg_status_pending"
+                android:padding="6dp"
+                android:layout_gravity="top" />
 
-            <!-- Message (if any) -->
-            <TextView
-                android:id="@+id/tv_message"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="💬 Message from teacher"
-                android:textSize="14sp"
-                android:textColor="@color/text_primary"
-                android:background="@color/background_light"
-                android:padding="8dp"
-                android:visibility="gone"
-                android:layout_marginBottom="12dp" />
+        </LinearLayout>
 
-            <!-- Action Buttons -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="end">
+        <!-- Course info -->
+        <TextView
+            android:id="@+id/tv_course_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Khóa học Tiếng Anh cơ bản"
+            android:textSize="16sp"
+            android:textColor="?attr/colorPrimary"
+            android:layout_marginBottom="4dp" />
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btn_view_details"
-                    android:layout_width="wrap_content"
-                    android:layout_height="36dp"
-                    android:text="Chi tiết"
-                    android:textSize="12sp"
-                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                    android:layout_marginEnd="8dp" />
+        <!-- Enrollment date -->
+        <TextView
+            android:id="@+id/tv_enrollment_date"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="15/07/2025 14:30"
+            android:textSize="12sp"
+            android:textColor="@android:color/darker_gray"
+            android:layout_marginBottom="8dp" />
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btn_reject"
-                    android:layout_width="wrap_content"
-                    android:layout_height="36dp"
-                    android:text="❌ Từ chối"
-                    android:textSize="12sp"
-                    android:backgroundTint="@color/status_inactive"
-                    android:layout_marginEnd="8dp" />
+        <!-- Message (optional) -->
+        <TextView
+            android:id="@+id/tv_message"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Tôi rất muốn học khóa này"
+            android:textSize="14sp"
+            android:textColor="@android:color/black"
+            android:background="@drawable/bg_message"
+            android:padding="8dp"
+            android:layout_marginBottom="12dp"
+            android:visibility="gone" />
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btn_approve"
-                    android:layout_width="wrap_content"
-                    android:layout_height="36dp"
-                    android:text="✅ Duyệt"
-                    android:textSize="12sp"
-                    android:backgroundTint="@color/status_active" />
+        <!-- Action buttons -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="end">
 
-            </LinearLayout>
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_view_details"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:text="Chi tiết"
+                android:textSize="12sp"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_marginEnd="8dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_reject"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:text="Từ chối"
+                android:textSize="12sp"
+                android:textColor="@android:color/white"
+                android:backgroundTint="@android:color/holo_red_dark"
+                android:layout_marginEnd="8dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_approve"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:text="Duyệt"
+                android:textSize="12sp"
+                android:textColor="@android:color/white"
+                android:backgroundTint="@android:color/holo_green_dark" />
 
         </LinearLayout>
 

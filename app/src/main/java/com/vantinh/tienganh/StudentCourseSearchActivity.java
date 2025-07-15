@@ -218,11 +218,47 @@ public class StudentCourseSearchActivity extends AppCompatActivity {
                 });
     }
 
+    private void createEnrollmentRequest(Course course, String studentId, String studentName, String studentEmail, String message) {
+        // Create enrollment request directly in enrollments collection with PENDING status
+        Enrollment enrollment = new Enrollment(
+                studentId,
+                studentName,
+                studentEmail,
+                course.getId(),
+                course.getTitle(),
+                course.getTeacherId()  // This is the key - teacherId must be included
+        );
+
+        // Set additional properties
+        enrollment.setMessage(message);
+        enrollment.setStatus("PENDING");
+        enrollment.setEnrollmentDate(new Date());
+        enrollment.setProgress(0.0);
+
+        // Log for debugging
+        android.util.Log.d("StudentCourseSearch", "Creating enrollment request:");
+        android.util.Log.d("StudentCourseSearch", "Student ID: " + studentId);
+        android.util.Log.d("StudentCourseSearch", "Course ID: " + course.getId());
+        android.util.Log.d("StudentCourseSearch", "Teacher ID: " + course.getTeacherId());
+
+        db.collection("enrollments")
+                .add(enrollment)
+                .addOnSuccessListener(documentReference -> {
+                    android.util.Log.d("StudentCourseSearch", "Enrollment request created successfully with ID: " + documentReference.getId());
+                    Toast.makeText(this, "Yêu cầu đăng ký đã được gửi thành công!", Toast.LENGTH_SHORT).show();
+                })
+                .addOnFailureListener(e -> {
+                    android.util.Log.e("StudentCourseSearch", "Failed to create enrollment request", e);
+                    Toast.makeText(this, "Lỗi gửi yêu cầu: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+    }
+
     private void checkExistingRequest(Course course, String studentId, String studentName, String studentEmail, String message) {
-        db.collection("courseRequests")
+        // Check in enrollments collection instead of courseRequests
+        db.collection("enrollments")
                 .whereEqualTo("studentId", studentId)
                 .whereEqualTo("courseId", course.getId())
-                .whereEqualTo("status", "pending")
+                .whereEqualTo("status", "PENDING")
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     if (!queryDocumentSnapshots.isEmpty()) {
@@ -230,7 +266,7 @@ public class StudentCourseSearchActivity extends AppCompatActivity {
                         return;
                     }
 
-                    // Check if already enrolled
+                    // Check if already enrolled (APPROVED status)
                     checkExistingEnrollment(course, studentId, studentName, studentEmail, message);
                 })
                 .addOnFailureListener(e -> {
@@ -242,39 +278,19 @@ public class StudentCourseSearchActivity extends AppCompatActivity {
         db.collection("enrollments")
                 .whereEqualTo("studentId", studentId)
                 .whereEqualTo("courseId", course.getId())
+                .whereEqualTo("status", "APPROVED")
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     if (!queryDocumentSnapshots.isEmpty()) {
-                        Toast.makeText(this, "Bạn đã tham gia khóa học này rồi", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, "Bạn đã được chấp nhận vào khóa học này rồi", Toast.LENGTH_SHORT).show();
                         return;
                     }
 
-                    // Create new request
+                    // Create new enrollment request
                     createEnrollmentRequest(course, studentId, studentName, studentEmail, message);
                 })
                 .addOnFailureListener(e -> {
                     Toast.makeText(this, "Lỗi kiểm tra ghi danh: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                });
-    }
-
-    private void createEnrollmentRequest(Course course, String studentId, String studentName, String studentEmail, String message) {
-        CourseRequest request = new CourseRequest(
-                studentId,
-                studentName,
-                studentEmail,
-                course.getId(),
-                course.getTitle(),
-                course.getTeacherId(),
-                message
-        );
-
-        db.collection("courseRequests")
-                .add(request)
-                .addOnSuccessListener(documentReference -> {
-                    Toast.makeText(this, "Yêu cầu đã được gửi thành công!", Toast.LENGTH_SHORT).show();
-                })
-                .addOnFailureListener(e -> {
-                    Toast.makeText(this, "Lỗi gửi yêu cầu: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }
 
@@ -301,12 +317,12 @@ public class StudentCourseSearchActivity extends AppCompatActivity {
                                            " by teacher: " + course.getTeacherName());
                     }
 
-                    // Sort by creation date in code instead of query
+                    // Sort in memory instead of using Firestore orderBy
                     courseList.sort((c1, c2) -> {
-                        if (c1.getCreatedAt() == null && c2.getCreatedAt() == null) return 0;
-                        if (c1.getCreatedAt() == null) return 1;
-                        if (c2.getCreatedAt() == null) return -1;
-                        return c2.getCreatedAt().compareTo(c1.getCreatedAt()); // Newest first
+                        if (c1.getCreatedAt() != null && c2.getCreatedAt() != null) {
+                            return c2.getCreatedAt().compareTo(c1.getCreatedAt());
+                        }
+                        return 0;
                     });
 
                     // Apply initial filter based on intent extra (if any)
