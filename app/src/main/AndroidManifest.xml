@@ -95,6 +95,27 @@
             android:name=".LessonDetailActivity"
             android:exported="false" />
 
+        <!-- Student Report Activities -->
+        <activity
+            android:name=".StudentReportActivity"
+            android:exported="false" />
+        <activity
+            android:name=".StudentDetailReportActivity"
+            android:exported="false" />
+        <activity
+            android:name=".StudentProgressDetailActivity"
+            android:exported="false" />
+
+        <!-- Course Student Management -->
+        <activity
+            android:name=".CourseStudentsActivity"
+            android:exported="false" />
+
+        <!-- Edit Course Activity -->
+        <activity
+            android:name=".EditCourseActivity"
+            android:exported="false" />
+
         <!-- Content and Management Activities -->
         <activity
             android:name=".ContentCreationActivity"

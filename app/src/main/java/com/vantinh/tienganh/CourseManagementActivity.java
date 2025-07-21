@@ -76,7 +76,8 @@ public class CourseManagementActivity extends AppCompatActivity {
     }
 
     private void onCourseClick(Course course) {
-        Intent intent = new Intent(this, CourseLessonsActivity.class);
+        // Navigate to EditCourseActivity instead of CourseLessonsActivity
+        Intent intent = new Intent(this, EditCourseActivity.class);
         intent.putExtra("courseId", course.getId());
         intent.putExtra("courseTitle", course.getTitle());
         startActivity(intent);

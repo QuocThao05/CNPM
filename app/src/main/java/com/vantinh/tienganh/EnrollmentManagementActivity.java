@@ -131,7 +131,6 @@ public class EnrollmentManagementActivity extends AppCompatActivity {
 
         String currentUserId = mAuth.getCurrentUser().getUid();
 
-        // Sử dụng query đơn giản hơn để tránh lỗi index
         db.collection("enrollments")
             .whereEqualTo("teacherId", currentUserId)
             .whereEqualTo("status", currentTab)
@@ -139,19 +138,31 @@ public class EnrollmentManagementActivity extends AppCompatActivity {
             .addOnCompleteListener(task -> {
                 if (task.isSuccessful()) {
                     enrollmentList.clear();
+
+                    if (task.getResult().isEmpty()) {
+                        updateUI();
+                        return;
+                    }
+
+                    // Counter để track số lượng enrollment đã được xử lý
+                    final int totalEnrollments = task.getResult().size();
+                    final int[] processedCount = {0};
+
                     for (QueryDocumentSnapshot document : task.getResult()) {
                         Enrollment enrollment = document.toObject(Enrollment.class);
                         enrollment.setId(document.getId());
 
-                        // Kiểm tra và lấy thông tin học viên nếu bị thiếu
-                        if (enrollment.getStudentName() == null || enrollment.getStudentName().equals("Học viên")) {
-                            loadStudentInfo(enrollment);
-                        }
+                        // Load thông tin student và course name trước khi add vào list
+                        loadCompleteEnrollmentInfo(enrollment, () -> {
+                            enrollmentList.add(enrollment);
+                            processedCount[0]++;
 
-                        enrollmentList.add(enrollment);
+                            // Khi đã xử lý xong tất cả enrollments thì update UI
+                            if (processedCount[0] == totalEnrollments) {
+                                updateUI();
+                            }
+                        });
                     }
-
-                    updateUI();
                 } else {
                     android.util.Log.e("EnrollmentManagement", "Error getting enrollments", task.getException());
                     Toast.makeText(this, "Lỗi tải danh sách đăng ký: " +
@@ -161,61 +172,68 @@ public class EnrollmentManagementActivity extends AppCompatActivity {
             });
     }
 
-    private void loadStudentInfo(Enrollment enrollment) {
-        if (enrollment.getStudentId() == null || enrollment.getStudentId().isEmpty()) {
-            return;
-        }
+    private void loadCompleteEnrollmentInfo(Enrollment enrollment, Runnable onComplete) {
+        // Load student info
+        if (enrollment.getStudentId() != null && !enrollment.getStudentId().isEmpty()) {
+            db.collection("users").document(enrollment.getStudentId())
+                .get()
+                .addOnSuccessListener(studentDoc -> {
+                    if (studentDoc.exists()) {
+                        String name = studentDoc.getString("name");
+                        String email = studentDoc.getString("email");
 
-        db.collection("users").document(enrollment.getStudentId())
-            .get()
-            .addOnSuccessListener(documentSnapshot -> {
-                if (documentSnapshot.exists()) {
-                    String name = documentSnapshot.getString("name");
-                    String email = documentSnapshot.getString("email");
+                        if (name != null && !name.isEmpty()) {
+                            enrollment.setStudentName(name);
+                        } else {
+                            enrollment.setStudentName("Tên không xác định");
+                        }
 
-                    if (name != null && !name.isEmpty()) {
-                        enrollment.setStudentName(name);
+                        if (email != null && !email.isEmpty()) {
+                            enrollment.setStudentEmail(email);
+                        }
+                    } else {
+                        enrollment.setStudentName("Học viên không tồn tại");
                     }
 
-                    if (email != null && !email.isEmpty() &&
-                        (enrollment.getStudentEmail() == null || enrollment.getStudentEmail().isEmpty())) {
-                        enrollment.setStudentEmail(email);
-                    }
-
-                    // Cập nhật lại enrollment trong Firestore để lần sau không cần load lại
-                    updateEnrollmentInfo(enrollment);
-
-                    // Refresh adapter
-                    enrollmentAdapter.notifyDataSetChanged();
-                }
-            })
-            .addOnFailureListener(e -> {
-                android.util.Log.e("EnrollmentManagement", "Error loading student info", e);
-            });
-    }
-
-    private void updateEnrollmentInfo(Enrollment enrollment) {
-        if (enrollment.getId() == null || enrollment.getId().isEmpty()) {
-            return;
-        }
-
-        java.util.Map<String, Object> updates = new java.util.HashMap<>();
-        if (enrollment.getStudentName() != null && !enrollment.getStudentName().equals("Học viên")) {
-            updates.put("studentName", enrollment.getStudentName());
-        }
-        if (enrollment.getStudentEmail() != null && !enrollment.getStudentEmail().isEmpty()) {
-            updates.put("studentEmail", enrollment.getStudentEmail());
-        }
-
-        if (!updates.isEmpty()) {
-            db.collection("enrollments").document(enrollment.getId())
-                .update(updates)
-                .addOnSuccessListener(aVoid -> {
-                    android.util.Log.d("EnrollmentManagement", "Student info updated successfully");
+                    // Load course info
+                    loadCourseInfo(enrollment, onComplete);
                 })
                 .addOnFailureListener(e -> {
-                    android.util.Log.e("EnrollmentManagement", "Error updating student info", e);
+                    android.util.Log.e("EnrollmentManagement", "Error loading student info", e);
+                    enrollment.setStudentName("Lỗi tải thông tin");
+                    loadCourseInfo(enrollment, onComplete);
                 });
+        } else {
+            enrollment.setStudentName("ID học viên không hợp lệ");
+            loadCourseInfo(enrollment, onComplete);
+        }
+    }
+
+    private void loadCourseInfo(Enrollment enrollment, Runnable onComplete) {
+        if (enrollment.getCourseId() != null && !enrollment.getCourseId().isEmpty()) {
+            db.collection("courses").document(enrollment.getCourseId())
+                .get()
+                .addOnSuccessListener(courseDoc -> {
+                    if (courseDoc.exists()) {
+                        String courseTitle = courseDoc.getString("title");
+                        if (courseTitle != null && !courseTitle.isEmpty()) {
+                            enrollment.setCourseName(courseTitle);
+                        } else {
+                            enrollment.setCourseName("Tên khóa học không xác định");
+                        }
+                    } else {
+                        enrollment.setCourseName("Khóa học không tồn tại");
+                    }
+                    onComplete.run();
+                })
+                .addOnFailureListener(e -> {
+                    android.util.Log.e("EnrollmentManagement", "Error loading course info", e);
+                    enrollment.setCourseName("Lỗi tải khóa học");
+                    onComplete.run();
+                });
+        } else {
+            enrollment.setCourseName("ID khóa học không hợp lệ");
+            onComplete.run();
         }
     }
 

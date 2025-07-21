@@ -138,7 +138,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
 
         if (cardViewReports != null) {
             cardViewReports.setOnClickListener(v -> {
-                Toast.makeText(this, "Chức năng báo cáo đang phát triển", Toast.LENGTH_SHORT).show();
+                startActivity(new Intent(this, StudentReportActivity.class));
             });
         }
 
