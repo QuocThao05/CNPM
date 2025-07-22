@@ -1,6 +1,7 @@
 package com.vantinh.tienganh;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.LinearLayout;
@@ -68,7 +69,7 @@ public class StudentCourseSearchActivity extends AppCompatActivity {
     }
 
     private void setupToolbar() {
-        setSupportActionBar(toolbar);
+        // Chỉ sử dụng ActionBar có sẵn để tránh conflict
         if (getSupportActionBar() != null) {
             getSupportActionBar().setTitle("Tìm kiếm khóa học");
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
@@ -176,7 +177,7 @@ public class StudentCourseSearchActivity extends AppCompatActivity {
         android.widget.EditText etMessage = dialogView.findViewById(R.id.et_message);
 
         tvCourseName.setText(course.getTitle());
-        tvTeacherName.setText("Giáo viên: " + course.getTeacherName());
+        tvTeacherName.setText("Khóa học ID: " + course.getId()); // Thay thế teacherName bằng courseId
 
         builder.setView(dialogView)
                 .setTitle("Yêu cầu tham gia khóa học")
@@ -197,101 +198,120 @@ public class StudentCourseSearchActivity extends AppCompatActivity {
             return;
         }
 
-        String studentId = mAuth.getCurrentUser().getUid();
+        String firebaseUid = mAuth.getCurrentUser().getUid();
 
-        // Get student info first
-        db.collection("users").document(studentId)
+        // Get student info từ users collection
+        db.collection("users").document(firebaseUid)
                 .get()
                 .addOnSuccessListener(documentSnapshot -> {
                     if (documentSnapshot.exists()) {
-                        String studentName = documentSnapshot.getString("name");
+                        String userRole = documentSnapshot.getString("role");
+                        String studentId = documentSnapshot.getString("id");  // Trường "id" trong users
+                        String studentFullName = documentSnapshot.getString("fullName");
                         String studentEmail = documentSnapshot.getString("email");
 
+                        // Verify rằng user có role là "student"
+                        if (!"student".equals(userRole)) {
+                            Toast.makeText(this, "Chỉ học viên mới có thể đăng ký khóa học", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+
+                        // Sử dụng trường "id" từ users collection (giống như test data)
+                        String finalStudentId = studentId != null ? studentId : firebaseUid;
+
+                        android.util.Log.d("StudentCourseSearch", "Student info - Role: " + userRole +
+                            ", ID: " + finalStudentId + ", Name: " + studentFullName + ", Email: " + studentEmail);
+
                         // Check if request already exists
-                        checkExistingRequest(course, studentId, studentName, studentEmail, message);
+                        checkExistingRequest(course, finalStudentId, studentFullName, studentEmail, message);
                     } else {
                         Toast.makeText(this, "Không tìm thấy thông tin học viên", Toast.LENGTH_SHORT).show();
                     }
                 })
                 .addOnFailureListener(e -> {
+                    android.util.Log.e("StudentCourseSearch", "Error loading student info", e);
                     Toast.makeText(this, "Lỗi tải thông tin: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }
 
-    private void createEnrollmentRequest(Course course, String studentId, String studentName, String studentEmail, String message) {
-        // Create enrollment request directly in enrollments collection with PENDING status
-        Enrollment enrollment = new Enrollment(
-                studentId,
-                studentName,
-                studentEmail,
-                course.getId(),
-                course.getTitle(),
-                course.getTeacherId()  // This is the key - teacherId must be included
+    private void createEnrollmentRequest(Course course, String studentId, String studentFullName, String studentEmail, String message) {
+        Log.d("StudentCourseSearch", "Creating course request without teacherId");
+        Log.d("StudentCourseSearch", "Course ID: " + course.getId());
+        Log.d("StudentCourseSearch", "Course title: " + course.getTitle());
+
+        // Tạo CourseRequest KHÔNG cần teacherId
+        CourseRequest request = new CourseRequest(
+            studentId,              // studentId
+            studentFullName,        // studentName
+            studentEmail,           // studentEmail
+            course.getId(),         // courseId
+            course.getTitle(),      // courseName
+            message                 // message
         );
 
-        // Set additional properties
-        enrollment.setMessage(message);
-        enrollment.setStatus("PENDING");
-        enrollment.setEnrollmentDate(new Date());
-        enrollment.setProgress(0.0);
-
         // Log for debugging
-        android.util.Log.d("StudentCourseSearch", "Creating enrollment request:");
-        android.util.Log.d("StudentCourseSearch", "Student ID: " + studentId);
-        android.util.Log.d("StudentCourseSearch", "Course ID: " + course.getId());
-        android.util.Log.d("StudentCourseSearch", "Teacher ID: " + course.getTeacherId());
+        Log.d("StudentCourseSearch", "Final CourseRequest data:");
+        Log.d("StudentCourseSearch", "  studentId: " + studentId);
+        Log.d("StudentCourseSearch", "  studentName: " + studentFullName);
+        Log.d("StudentCourseSearch", "  courseId: " + course.getId());
+        Log.d("StudentCourseSearch", "  courseName: " + course.getTitle());
 
-        db.collection("enrollments")
-                .add(enrollment)
+        // Lưu CourseRequest vào Firebase
+        db.collection("courseRequests")
+                .add(request)
                 .addOnSuccessListener(documentReference -> {
-                    android.util.Log.d("StudentCourseSearch", "Enrollment request created successfully with ID: " + documentReference.getId());
-                    Toast.makeText(this, "Yêu cầu đăng ký đã được gửi thành công!", Toast.LENGTH_SHORT).show();
+                    Log.d("StudentCourseSearch", "Course request created successfully with ID: " + documentReference.getId());
+                    Toast.makeText(this, "Yêu cầu tham gia khóa học đã được gửi thành công!", Toast.LENGTH_SHORT).show();
                 })
                 .addOnFailureListener(e -> {
-                    android.util.Log.e("StudentCourseSearch", "Failed to create enrollment request", e);
+                    Log.e("StudentCourseSearch", "Failed to create course request", e);
                     Toast.makeText(this, "Lỗi gửi yêu cầu: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }
 
     private void checkExistingRequest(Course course, String studentId, String studentName, String studentEmail, String message) {
-        // Check in enrollments collection instead of courseRequests
-        db.collection("enrollments")
+        // Kiểm tra xem đã có yêu cầu pending cho khóa học này chưa
+        db.collection("courseRequests")
                 .whereEqualTo("studentId", studentId)
                 .whereEqualTo("courseId", course.getId())
-                .whereEqualTo("status", "PENDING")
+                .whereEqualTo("status", "pending")
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     if (!queryDocumentSnapshots.isEmpty()) {
-                        Toast.makeText(this, "Bạn đã gửi yêu cầu cho khóa học này rồi", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, "Bạn đã gửi yêu cầu cho khóa học này và đang chờ phê duyệt", Toast.LENGTH_SHORT).show();
                         return;
                     }
 
-                    // Check if already enrolled (APPROVED status)
-                    checkExistingEnrollment(course, studentId, studentName, studentEmail, message);
+                    // Kiểm tra xem đã được approve (có trong enrollments) chưa
+                    db.collection("enrollments")
+                            .whereEqualTo("studentId", studentId)
+                            .whereEqualTo("courseId", course.getId())
+                            .get()
+                            .addOnSuccessListener(enrollmentDocs -> {
+                                if (!enrollmentDocs.isEmpty()) {
+                                    Toast.makeText(this, "Bạn đã tham gia khóa học này rồi", Toast.LENGTH_SHORT).show();
+                                    return;
+                                }
+
+                                // Chưa có yêu cầu nào, tạo mới
+                                createEnrollmentRequest(course, studentId, studentName, studentEmail, message);
+                            })
+                            .addOnFailureListener(e -> {
+                                android.util.Log.e("StudentCourseSearch", "Error checking enrollments", e);
+                                // Vẫn cho phép tạo yêu cầu nếu không kiểm tra được
+                                createEnrollmentRequest(course, studentId, studentName, studentEmail, message);
+                            });
                 })
                 .addOnFailureListener(e -> {
+                    android.util.Log.e("StudentCourseSearch", "Error checking existing request", e);
                     Toast.makeText(this, "Lỗi kiểm tra yêu cầu: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }
 
     private void checkExistingEnrollment(Course course, String studentId, String studentName, String studentEmail, String message) {
-        db.collection("enrollments")
-                .whereEqualTo("studentId", studentId)
-                .whereEqualTo("courseId", course.getId())
-                .whereEqualTo("status", "APPROVED")
-                .get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
-                    if (!queryDocumentSnapshots.isEmpty()) {
-                        Toast.makeText(this, "Bạn đã được chấp nhận vào khóa học này rồi", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-
-                    // Create new enrollment request
-                    createEnrollmentRequest(course, studentId, studentName, studentEmail, message);
-                })
-                .addOnFailureListener(e -> {
-                    Toast.makeText(this, "Lỗi kiểm tra ghi danh: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                });
+        // Phương thức này không còn cần thiết vì chúng ta đã bỏ status trong class Enrollment mới
+        // Chuyển thẳng đến tạo enrollment request
+        createEnrollmentRequest(course, studentId, studentName, studentEmail, message);
     }
 
     private void loadAvailableCourses() {
@@ -314,7 +334,7 @@ public class StudentCourseSearchActivity extends AppCompatActivity {
                         courseList.add(course);
 
                         android.util.Log.d("StudentCourseSearch", "Added course: " + course.getTitle() +
-                                           " by teacher: " + course.getTeacherName());
+                           " with category: " + course.getCategory()); // Thay thế teacherName bằng category
                     }
 
                     // Sort in memory instead of using Firestore orderBy
@@ -367,7 +387,7 @@ public class StudentCourseSearchActivity extends AppCompatActivity {
             boolean matchesSearch = searchQuery.isEmpty() ||
                                   course.getTitle().toLowerCase().contains(searchQuery) ||
                                   course.getDescription().toLowerCase().contains(searchQuery) ||
-                                  course.getTeacherName().toLowerCase().contains(searchQuery);
+                                  course.getCategory().toLowerCase().contains(searchQuery); // Thay thế teacherName bằng category
 
             boolean matchesCategory = selectedCategory.isEmpty() ||
                                     course.getCategory().equals(selectedCategory);

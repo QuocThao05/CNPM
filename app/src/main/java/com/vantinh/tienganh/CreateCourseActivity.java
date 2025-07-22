@@ -130,8 +130,6 @@ public class CreateCourseActivity extends AppCompatActivity {
         course.put("title", title);
         course.put("description", description);
         course.put("teacherId", mAuth.getCurrentUser().getUid());
-        course.put("teacherName", mAuth.getCurrentUser().getDisplayName() != null ?
-                   mAuth.getCurrentUser().getDisplayName() : "Unknown Teacher");
         course.put("level", level);
         course.put("category", category);
         course.put("duration", duration);

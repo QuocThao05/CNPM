@@ -141,7 +141,7 @@ public class StudentDashboardActivity extends AppCompatActivity {
 
         btnMyCourses.setOnClickListener(v -> {
             // Navigate to enrolled courses
-            Toast.makeText(this, "Chức năng khóa học của tôi đang phát triển", Toast.LENGTH_SHORT).show();
+            startActivity(new Intent(this, StudentMyCoursesActivity.class));
         });
 
         // Progress buttons

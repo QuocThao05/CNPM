@@ -15,6 +15,7 @@ public class CourseRequestAdapter extends RecyclerView.Adapter<CourseRequestAdap
 
     private List<CourseRequest> requestList;
     private OnRequestActionListener listener;
+    private SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
 
     public interface OnRequestActionListener {
         void onApprove(CourseRequest request);
@@ -42,20 +43,22 @@ public class CourseRequestAdapter extends RecyclerView.Adapter<CourseRequestAdap
         holder.tvStudentEmail.setText(request.getStudentEmail());
         holder.tvCourseName.setText(request.getCourseName());
         holder.tvMessage.setText(request.getMessage());
+        holder.tvRequestDate.setText(dateFormat.format(request.getRequestDate()));
+        holder.tvStatus.setText(request.getStatus().toUpperCase());
 
-        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
-        holder.tvRequestDate.setText("Ngày yêu cầu: " + sdf.format(request.getRequestDate()));
-
-        // Hide buttons if request is not pending
-        if (!"pending".equals(request.getStatus())) {
-            holder.btnApprove.setVisibility(View.GONE);
-            holder.btnReject.setVisibility(View.GONE);
-            holder.tvStatus.setVisibility(View.VISIBLE);
-            holder.tvStatus.setText("Trạng thái: " + getStatusText(request.getStatus()));
-        } else {
+        // Set status color
+        if ("pending".equals(request.getStatus())) {
+            holder.tvStatus.setTextColor(holder.itemView.getContext().getColor(android.R.color.holo_orange_dark));
             holder.btnApprove.setVisibility(View.VISIBLE);
             holder.btnReject.setVisibility(View.VISIBLE);
-            holder.tvStatus.setVisibility(View.GONE);
+        } else if ("approved".equals(request.getStatus())) {
+            holder.tvStatus.setTextColor(holder.itemView.getContext().getColor(android.R.color.holo_green_dark));
+            holder.btnApprove.setVisibility(View.GONE);
+            holder.btnReject.setVisibility(View.GONE);
+        } else {
+            holder.tvStatus.setTextColor(holder.itemView.getContext().getColor(android.R.color.holo_red_dark));
+            holder.btnApprove.setVisibility(View.GONE);
+            holder.btnReject.setVisibility(View.GONE);
         }
 
         holder.btnApprove.setOnClickListener(v -> {
@@ -76,15 +79,9 @@ public class CourseRequestAdapter extends RecyclerView.Adapter<CourseRequestAdap
         return requestList.size();
     }
 
-    private String getStatusText(String status) {
-        switch (status) {
-            case "approved":
-                return "Đã duyệt";
-            case "rejected":
-                return "Đã từ chối";
-            default:
-                return "Đang chờ";
-        }
+    public void updateList(List<CourseRequest> newList) {
+        this.requestList = newList;
+        notifyDataSetChanged();
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {

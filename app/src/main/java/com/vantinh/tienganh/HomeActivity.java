@@ -7,10 +7,8 @@ import android.view.MenuItem;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
-import androidx.appcompat.widget.Toolbar;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
-
 import androidx.appcompat.app.AppCompatActivity;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -40,8 +38,10 @@ public class HomeActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
-        Toolbar toolbar = findViewById(R.id.home_toolbar);
-        setSupportActionBar(toolbar);
+
+        // Không sử dụng setSupportActionBar vì theme đã có ActionBar
+        // Toolbar toolbar = findViewById(R.id.home_toolbar);
+        // setSupportActionBar(toolbar);
 
         mAuth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();

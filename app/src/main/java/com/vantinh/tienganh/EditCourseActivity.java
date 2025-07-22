@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ProgressBar;
@@ -15,6 +16,9 @@ import androidx.appcompat.widget.Toolbar;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 public class EditCourseActivity extends AppCompatActivity {
 
@@ -29,6 +33,10 @@ public class EditCourseActivity extends AppCompatActivity {
     private FirebaseFirestore db;
     private String courseId;
     private Course currentCourse;
+
+    // Arrays cho spinners
+    private String[] levels = {"Beginner", "Intermediate", "Advanced"};
+    private String[] categories = {"Grammar", "Vocabulary", "Listening", "Speaking", "Reading", "Writing"};
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,6 +56,7 @@ public class EditCourseActivity extends AppCompatActivity {
 
         initViews();
         setupToolbar();
+        setupSpinners();
         setupBottomNavigation();
         setupClickListeners();
         loadCourseData();
@@ -76,6 +85,20 @@ public class EditCourseActivity extends AppCompatActivity {
         }
     }
 
+    private void setupSpinners() {
+        // Setup Level spinner
+        ArrayAdapter<String> levelAdapter = new ArrayAdapter<>(this,
+            android.R.layout.simple_spinner_item, levels);
+        levelAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerLevel.setAdapter(levelAdapter);
+
+        // Setup Category spinner
+        ArrayAdapter<String> categoryAdapter = new ArrayAdapter<>(this,
+            android.R.layout.simple_spinner_item, categories);
+        categoryAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerCategory.setAdapter(categoryAdapter);
+    }
+
     private void setupBottomNavigation() {
         bottomNavigation.setSelectedItemId(R.id.nav_courses);
         bottomNavigation.setOnItemSelectedListener(item -> {
@@ -101,9 +124,10 @@ public class EditCourseActivity extends AppCompatActivity {
         btnUpdateCourse.setOnClickListener(v -> updateCourse());
         btnDeleteCourse.setOnClickListener(v -> deleteCourse());
         btnManageLessons.setOnClickListener(v -> {
-            Intent intent = new Intent(this, CourseLessonsActivity.class);
+            Intent intent = new Intent(this, LessonManagementActivity.class);
             intent.putExtra("courseId", courseId);
             intent.putExtra("courseTitle", currentCourse != null ? currentCourse.getTitle() : "");
+            intent.putExtra("courseCategory", currentCourse != null ? currentCourse.getCategory() : "");
             startActivity(intent);
         });
         btnViewStudents.setOnClickListener(v -> {
@@ -134,75 +158,145 @@ public class EditCourseActivity extends AppCompatActivity {
             })
             .addOnFailureListener(e -> {
                 progressBar.setVisibility(View.GONE);
-                Toast.makeText(this, "Lỗi khi tải dữ liệu khóa học", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Lỗi khi tải dữ liệu khóa học: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                android.util.Log.e("EditCourse", "Error loading course", e);
             });
     }
 
     private void populateFields() {
+        // Điền thông tin khóa học vào các trường
         etCourseTitle.setText(currentCourse.getTitle());
         etCourseDescription.setText(currentCourse.getDescription());
         etCourseDuration.setText(String.valueOf(currentCourse.getDuration()));
 
-        // Set spinner selections based on course data
-        // You'll need to implement spinner population logic here
+        // Set spinner selections
+        setSpinnerSelection(spinnerLevel, currentCourse.getLevel());
+        setSpinnerSelection(spinnerCategory, currentCourse.getCategory());
+
+        android.util.Log.d("EditCourse", "Populated fields for course: " + currentCourse.getTitle());
+    }
+
+    private void setSpinnerSelection(Spinner spinner, String value) {
+        if (value != null) {
+            ArrayAdapter adapter = (ArrayAdapter) spinner.getAdapter();
+            int position = adapter.getPosition(value);
+            if (position >= 0) {
+                spinner.setSelection(position);
+            }
+        }
     }
 
     private void updateCourse() {
         String title = etCourseTitle.getText().toString().trim();
         String description = etCourseDescription.getText().toString().trim();
         String durationStr = etCourseDuration.getText().toString().trim();
+        String level = spinnerLevel.getSelectedItem().toString();
+        String category = spinnerCategory.getSelectedItem().toString();
 
-        if (title.isEmpty() || description.isEmpty() || durationStr.isEmpty()) {
-            Toast.makeText(this, "Vui lòng điền đầy đủ thông tin", Toast.LENGTH_SHORT).show();
+        // Validation
+        if (title.isEmpty()) {
+            etCourseTitle.setError("Vui lòng nhập tên khóa học");
+            etCourseTitle.requestFocus();
+            return;
+        }
+
+        if (description.isEmpty()) {
+            etCourseDescription.setError("Vui lòng nhập mô tả khóa học");
+            etCourseDescription.requestFocus();
+            return;
+        }
+
+        if (durationStr.isEmpty()) {
+            etCourseDuration.setError("Vui lòng nhập thời lượng");
+            etCourseDuration.requestFocus();
             return;
         }
 
         int duration;
         try {
             duration = Integer.parseInt(durationStr);
+            if (duration <= 0) {
+                etCourseDuration.setError("Thời lượng phải lớn hơn 0");
+                etCourseDuration.requestFocus();
+                return;
+            }
         } catch (NumberFormatException e) {
-            Toast.makeText(this, "Thời lượng phải là số", Toast.LENGTH_SHORT).show();
+            etCourseDuration.setError("Thời lượng phải là số");
+            etCourseDuration.requestFocus();
             return;
         }
 
         progressBar.setVisibility(View.VISIBLE);
+        btnUpdateCourse.setEnabled(false);
 
-        currentCourse.setTitle(title);
-        currentCourse.setDescription(description);
-        currentCourse.setDuration(duration);
+        // Tạo map để update
+        Map<String, Object> updates = new HashMap<>();
+        updates.put("title", title);
+        updates.put("description", description);
+        updates.put("duration", duration);
+        updates.put("level", level);
+        updates.put("category", category);
+        updates.put("updatedAt", new Date());
+
+        android.util.Log.d("EditCourse", "Updating course with: " + updates);
 
         db.collection("courses").document(courseId)
-            .set(currentCourse)
+            .update(updates)
             .addOnSuccessListener(aVoid -> {
                 progressBar.setVisibility(View.GONE);
-                Toast.makeText(this, "Cập nhật khóa học thành công", Toast.LENGTH_SHORT).show();
+                btnUpdateCourse.setEnabled(true);
+                Toast.makeText(this, "Cập nhật khóa học thành công!", Toast.LENGTH_SHORT).show();
+
+                // Cập nhật currentCourse object
+                currentCourse.setTitle(title);
+                currentCourse.setDescription(description);
+                currentCourse.setDuration(duration);
+                currentCourse.setLevel(level);
+                currentCourse.setCategory(category);
+
+                android.util.Log.d("EditCourse", "Course updated successfully");
             })
             .addOnFailureListener(e -> {
                 progressBar.setVisibility(View.GONE);
-                Toast.makeText(this, "Lỗi khi cập nhật khóa học", Toast.LENGTH_SHORT).show();
+                btnUpdateCourse.setEnabled(true);
+                Toast.makeText(this, "Lỗi khi cập nhật khóa học: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                android.util.Log.e("EditCourse", "Error updating course", e);
             });
     }
 
     private void deleteCourse() {
         new androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle("Xác nhận xóa")
-            .setMessage("Bạn có chắc chắn muốn xóa khóa học này? Hành động này không thể hoàn tác.")
-            .setPositiveButton("Xóa", (dialog, which) -> {
-                progressBar.setVisibility(View.VISIBLE);
-                db.collection("courses").document(courseId)
-                    .delete()
-                    .addOnSuccessListener(aVoid -> {
-                        progressBar.setVisibility(View.GONE);
-                        Toast.makeText(this, "Đã xóa khóa học", Toast.LENGTH_SHORT).show();
-                        finish();
-                    })
-                    .addOnFailureListener(e -> {
-                        progressBar.setVisibility(View.GONE);
-                        Toast.makeText(this, "Lỗi khi xóa khóa học", Toast.LENGTH_SHORT).show();
-                    });
-            })
+            .setTitle("Xác nhận xóa khóa học")
+            .setMessage("Bạn có chắc chắn muốn xóa khóa học \"" + currentCourse.getTitle() + "\"?\n\nHành động này sẽ:\n- Xóa khóa học vĩnh viễn\n- Xóa tất cả bài học trong khóa\n- Không thể hoàn tác")
+            .setPositiveButton("Xóa", (dialog, which) -> performDeleteCourse())
             .setNegativeButton("Hủy", null)
+            .setIcon(android.R.drawable.ic_dialog_alert)
             .show();
+    }
+
+    private void performDeleteCourse() {
+        progressBar.setVisibility(View.VISIBLE);
+        btnDeleteCourse.setEnabled(false);
+
+        db.collection("courses").document(courseId)
+            .delete()
+            .addOnSuccessListener(aVoid -> {
+                progressBar.setVisibility(View.GONE);
+                Toast.makeText(this, "Đã xóa khóa học thành công", Toast.LENGTH_SHORT).show();
+                android.util.Log.d("EditCourse", "Course deleted successfully");
+
+                // Quay về CourseManagementActivity
+                Intent intent = new Intent(this, CourseManagementActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                startActivity(intent);
+                finish();
+            })
+            .addOnFailureListener(e -> {
+                progressBar.setVisibility(View.GONE);
+                btnDeleteCourse.setEnabled(true);
+                Toast.makeText(this, "Lỗi khi xóa khóa học: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                android.util.Log.e("EditCourse", "Error deleting course", e);
+            });
     }
 
     @Override
@@ -212,5 +306,14 @@ public class EditCourseActivity extends AppCompatActivity {
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Reload course data when returning to this activity
+        if (courseId != null) {
+            loadCourseData();
+        }
     }
 }

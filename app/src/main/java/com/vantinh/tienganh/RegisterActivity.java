@@ -27,8 +27,8 @@ import java.util.Map;
 
 public class RegisterActivity extends AppCompatActivity {
 
-    private TextInputLayout tilFullName, tilEmail, tilPassword, tilConfirmPassword;
-    private TextInputEditText etFullName, etEmail, etPassword, etConfirmPassword;
+    private TextInputLayout tilFullName, tilEmail, tilAddress, tilPassword, tilConfirmPassword;
+    private TextInputEditText etFullName, etEmail, etAddress, etPassword, etConfirmPassword;
     private MaterialButton btnRegister;
     private Spinner spRole;
     private CardView headerCard, formCard;
@@ -52,11 +52,13 @@ public class RegisterActivity extends AppCompatActivity {
     private void initViews() {
         tilFullName = findViewById(R.id.til_full_name);
         tilEmail = findViewById(R.id.til_email);
+        tilAddress = findViewById(R.id.til_address);
         tilPassword = findViewById(R.id.til_password);
         tilConfirmPassword = findViewById(R.id.til_confirm_password);
 
         etFullName = findViewById(R.id.et_full_name);
         etEmail = findViewById(R.id.et_email);
+        etAddress = findViewById(R.id.et_address);
         etPassword = findViewById(R.id.et_password);
         etConfirmPassword = findViewById(R.id.et_confirm_password);
 
@@ -88,23 +90,24 @@ public class RegisterActivity extends AppCompatActivity {
     private void handleRegister() {
         String fullName = etFullName.getText().toString().trim();
         String email = etEmail.getText().toString().trim();
+        String address = etAddress.getText().toString().trim();
         String password = etPassword.getText().toString().trim();
         String confirmPassword = etConfirmPassword.getText().toString().trim();
         String selectedRole = spRole.getSelectedItem().toString();
 
-        if (validateInput(fullName, email, password, confirmPassword)) {
+        if (validateInput(fullName, email, address, password, confirmPassword)) {
             animateLoading(true);
-            createUserAccount(fullName, email, password, selectedRole);
+            createUserAccount(fullName, email, address, password, selectedRole);
         }
     }
 
-    private void createUserAccount(String fullName, String email, String password, String role) {
+    private void createUserAccount(String fullName, String email, String address, String password, String role) {
         mAuth.createUserWithEmailAndPassword(email, password)
                 .addOnCompleteListener(this, task -> {
                     animateLoading(false);
                     if (task.isSuccessful()) {
                         String userId = mAuth.getCurrentUser().getUid();
-                        saveUserToDatabase(userId, fullName, email, role);
+                        saveUserToDatabase(userId, fullName, email, address, role);
                     } else {
                         Toast.makeText(RegisterActivity.this,
                             "Đăng ký thất bại: " + task.getException().getMessage(),
@@ -113,46 +116,64 @@ public class RegisterActivity extends AppCompatActivity {
                 });
     }
 
-    private void saveUserToDatabase(String userId, String fullName, String email, String role) {
-        Map<String, Object> user = new HashMap<>();
-        user.put("fullName", fullName);
-        user.put("email", email);
-        user.put("role", role);
-        user.put("createdAt", System.currentTimeMillis());
-        user.put("isActive", true);
+    private void saveUserToDatabase(String userId, String fullName, String email, String address, String role) {
+        // Tạo dữ liệu user với chỉ 5 trường theo yêu cầu: ID, address, email, fullName, role
+        Map<String, Object> userData = new HashMap<>();
+        userData.put("id", userId);
+        userData.put("email", email);
+        userData.put("fullName", fullName);
+        userData.put("address", address); // Địa chỉ từ input
+        userData.put("role", mapRoleFromSpinner(role)); // Chuyển đổi role từ spinner
 
         db.collection("users").document(userId)
-                .set(user)
+                .set(userData)
                 .addOnSuccessListener(aVoid -> {
+                    android.util.Log.d("RegisterActivity", "User registered with 5 fields: " + userData.toString());
                     Toast.makeText(RegisterActivity.this,
                         "Đăng ký thành công!", Toast.LENGTH_SHORT).show();
-                    redirectToAppropriateActivity(role);
+                    redirectToAppropriateActivity(mapRoleFromSpinner(role));
                 })
                 .addOnFailureListener(e -> {
+                    android.util.Log.e("RegisterActivity", "Error saving user to Firestore", e);
                     Toast.makeText(RegisterActivity.this,
                         "Lỗi lưu thông tin: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }
 
+    // Phương thức chuyển đổi role từ spinner thành format chuẩn
+    private String mapRoleFromSpinner(String spinnerRole) {
+        switch (spinnerRole) {
+            case "Giáo viên":
+                return "teacher";
+            case "Quản trị viên":
+                return "admin";
+            case "Học viên":
+            default:
+                return "student";
+        }
+    }
+
     private void redirectToAppropriateActivity(String role) {
         Intent intent;
-        switch (role) {
-            case "Giáo viên":
+        switch (role.toLowerCase()) {
+            case "teacher":
                 intent = new Intent(RegisterActivity.this, TeacherDashboardActivity.class);
                 break;
-            case "Quản trị viên":
+            case "admin":
                 intent = new Intent(RegisterActivity.this, AdminDashboardActivity.class);
                 break;
-            default: // Học viên
+            case "student":
+            default:
                 intent = new Intent(RegisterActivity.this, StudentDashboardActivity.class);
                 break;
         }
         intent.putExtra("userRole", role);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
         finish();
     }
 
-    private boolean validateInput(String fullName, String email, String password, String confirmPassword) {
+    private boolean validateInput(String fullName, String email, String address, String password, String confirmPassword) {
         boolean isValid = true;
 
         if (TextUtils.isEmpty(fullName)) {
@@ -169,6 +190,14 @@ public class RegisterActivity extends AppCompatActivity {
             isValid = false;
         } else {
             tilEmail.setError(null);
+        }
+
+        if (TextUtils.isEmpty(address)) {
+            tilAddress.setError("Vui lòng nhập địa chỉ");
+            animateError(tilAddress);
+            isValid = false;
+        } else {
+            tilAddress.setError(null);
         }
 
         if (TextUtils.isEmpty(password)) {

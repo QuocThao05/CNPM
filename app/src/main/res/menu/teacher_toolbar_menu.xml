@@ -3,27 +3,9 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item
-        android:id="@+id/action_notifications"
-        android:icon="@android:drawable/ic_popup_reminder"
-        android:title="Notifications"
-        app:showAsAction="ifRoom" />
-
-    <item
-        android:id="@+id/action_search"
-        android:icon="@android:drawable/ic_menu_search"
-        android:title="Search"
-        app:showAsAction="ifRoom" />
-
-    <item
-        android:id="@+id/action_settings"
-        android:icon="@android:drawable/ic_menu_preferences"
-        android:title="Settings"
-        app:showAsAction="never" />
-
-    <item
         android:id="@+id/action_logout"
-        android:icon="@android:drawable/ic_menu_revert"
-        android:title="Logout"
+        android:title="Đăng xuất"
+        android:icon="@android:drawable/ic_menu_close_clear_cancel"
         app:showAsAction="never" />
 
 </menu>

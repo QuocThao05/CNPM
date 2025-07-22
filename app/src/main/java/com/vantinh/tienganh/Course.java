@@ -8,7 +8,6 @@ public class Course {
     private String title;
     private String description;
     private String teacherId;
-    private String teacherName;
     private String imageUrl;
     private String level; // Beginner, Intermediate, Advanced
     private String category; // Grammar, Vocabulary, Listening, Speaking
@@ -24,12 +23,11 @@ public class Course {
         // Required empty constructor for Firebase
     }
 
-    public Course(String title, String description, String teacherId, String teacherName,
+    public Course(String title, String description, String teacherId,
                   String level, String category, int duration) {
         this.title = title;
         this.description = description;
         this.teacherId = teacherId;
-        this.teacherName = teacherName;
         this.level = level;
         this.category = category;
         this.duration = duration;
@@ -52,9 +50,6 @@ public class Course {
 
     public String getTeacherId() { return teacherId; }
     public void setTeacherId(String teacherId) { this.teacherId = teacherId; }
-
-    public String getTeacherName() { return teacherName; }
-    public void setTeacherName(String teacherName) { this.teacherName = teacherName; }
 
     public String getImageUrl() { return imageUrl; }
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }

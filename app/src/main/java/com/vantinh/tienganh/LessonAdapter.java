@@ -6,7 +6,6 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
-import androidx.cardview.widget.CardView;
 import androidx.recyclerview.widget.RecyclerView;
 import java.text.SimpleDateFormat;
 import java.util.List;
@@ -15,15 +14,18 @@ import java.util.Locale;
 public class LessonAdapter extends RecyclerView.Adapter<LessonAdapter.LessonViewHolder> {
 
     private List<Lesson> lessonList;
-    private OnLessonClickListener listener;
+    private OnLessonClickListener onLessonClickListener;
+    private SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
 
     public interface OnLessonClickListener {
         void onLessonClick(Lesson lesson);
+        void onLessonEdit(Lesson lesson);
+        void onLessonDelete(Lesson lesson);
     }
 
-    public LessonAdapter(List<Lesson> lessonList, OnLessonClickListener listener) {
+    public LessonAdapter(List<Lesson> lessonList, OnLessonClickListener onLessonClickListener) {
         this.lessonList = lessonList;
-        this.listener = listener;
+        this.onLessonClickListener = onLessonClickListener;
     }
 
     @NonNull
@@ -37,7 +39,7 @@ public class LessonAdapter extends RecyclerView.Adapter<LessonAdapter.LessonView
     @Override
     public void onBindViewHolder(@NonNull LessonViewHolder holder, int position) {
         Lesson lesson = lessonList.get(position);
-        holder.bind(lesson, position + 1);
+        holder.bind(lesson);
     }
 
     @Override
@@ -45,94 +47,84 @@ public class LessonAdapter extends RecyclerView.Adapter<LessonAdapter.LessonView
         return lessonList.size();
     }
 
-    class LessonViewHolder extends RecyclerView.ViewHolder {
-        private CardView cardLesson;
-        private TextView tvLessonNumber;
+    public class LessonViewHolder extends RecyclerView.ViewHolder {
         private TextView tvLessonTitle;
+        private TextView tvLessonOrder;
         private TextView tvLessonType;
         private TextView tvEstimatedTime;
         private TextView tvCreatedDate;
-        private ImageView ivLessonIcon;
-        private View viewStatusIndicator;
+        private TextView tvPublishStatus;
+        private TextView tvGrammarInfo;
+        private ImageView ivEdit;
+        private ImageView ivDelete;
 
         public LessonViewHolder(@NonNull View itemView) {
             super(itemView);
-            cardLesson = itemView.findViewById(R.id.card_lesson);
-            tvLessonNumber = itemView.findViewById(R.id.tv_lesson_number);
             tvLessonTitle = itemView.findViewById(R.id.tv_lesson_title);
+            tvLessonOrder = itemView.findViewById(R.id.tv_lesson_order);
             tvLessonType = itemView.findViewById(R.id.tv_lesson_type);
             tvEstimatedTime = itemView.findViewById(R.id.tv_estimated_time);
             tvCreatedDate = itemView.findViewById(R.id.tv_created_date);
-            ivLessonIcon = itemView.findViewById(R.id.iv_lesson_icon);
-            viewStatusIndicator = itemView.findViewById(R.id.view_status_indicator);
+            tvPublishStatus = itemView.findViewById(R.id.tv_publish_status);
+            tvGrammarInfo = itemView.findViewById(R.id.tv_grammar_info);
+            ivEdit = itemView.findViewById(R.id.iv_edit);
+            ivDelete = itemView.findViewById(R.id.iv_delete);
+
+            itemView.setOnClickListener(v -> {
+                if (onLessonClickListener != null) {
+                    onLessonClickListener.onLessonClick(lessonList.get(getAdapterPosition()));
+                }
+            });
+
+            ivEdit.setOnClickListener(v -> {
+                if (onLessonClickListener != null) {
+                    onLessonClickListener.onLessonEdit(lessonList.get(getAdapterPosition()));
+                }
+            });
+
+            ivDelete.setOnClickListener(v -> {
+                if (onLessonClickListener != null) {
+                    onLessonClickListener.onLessonDelete(lessonList.get(getAdapterPosition()));
+                }
+            });
         }
 
-        public void bind(Lesson lesson, int lessonNumber) {
-            tvLessonNumber.setText("Bài " + lessonNumber);
+        public void bind(Lesson lesson) {
             tvLessonTitle.setText(lesson.getTitle());
-            tvLessonType.setText(getTypeDisplayName(lesson.getType()));
-            tvEstimatedTime.setText("⏱ " + lesson.getEstimatedTime() + " phút");
+            tvLessonOrder.setText("Bài " + lesson.getOrder());
+            tvLessonType.setText(lesson.getTypeDisplayName());
+            tvEstimatedTime.setText(lesson.getEstimatedTimeString());
 
             if (lesson.getCreatedAt() != null) {
-                SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
-                tvCreatedDate.setText("📅 " + sdf.format(lesson.getCreatedAt()));
+                tvCreatedDate.setText("Tạo: " + dateFormat.format(lesson.getCreatedAt()));
             }
 
-            // Set icon based on lesson type
-            setLessonIcon(lesson.getType());
-
-            // Set status indicator color
             if (lesson.isPublished()) {
-                viewStatusIndicator.setBackgroundResource(R.color.status_active);
+                tvPublishStatus.setText("Đã xuất bản");
+                tvPublishStatus.setTextColor(itemView.getContext().getColor(android.R.color.holo_green_dark));
             } else {
-                viewStatusIndicator.setBackgroundResource(R.color.status_pending);
+                tvPublishStatus.setText("Nháp");
+                tvPublishStatus.setTextColor(itemView.getContext().getColor(android.R.color.holo_orange_dark));
             }
 
-            cardLesson.setOnClickListener(v -> {
-                if (listener != null) {
-                    listener.onLessonClick(lesson);
+            // Show grammar-specific info if this is a Grammar lesson
+            if ("Grammar".equalsIgnoreCase(lesson.getCategory())) {
+                tvGrammarInfo.setVisibility(View.VISIBLE);
+                StringBuilder grammarInfo = new StringBuilder();
+
+                if (lesson.getGrammarRule() != null && !lesson.getGrammarRule().isEmpty()) {
+                    grammarInfo.append("Quy tắc: ").append(lesson.getGrammarRule().substring(0,
+                        Math.min(50, lesson.getGrammarRule().length()))).append("...");
                 }
-            });
 
-            // Add animation
-            cardLesson.setOnTouchListener((v, event) -> {
-                switch (event.getAction()) {
-                    case android.view.MotionEvent.ACTION_DOWN:
-                        v.animate().scaleX(0.95f).scaleY(0.95f).setDuration(100).start();
-                        break;
-                    case android.view.MotionEvent.ACTION_UP:
-                    case android.view.MotionEvent.ACTION_CANCEL:
-                        v.animate().scaleX(1.0f).scaleY(1.0f).setDuration(100).start();
-                        break;
+                if (lesson.getGrammarExamples() != null && !lesson.getGrammarExamples().isEmpty()) {
+                    if (grammarInfo.length() > 0) grammarInfo.append("\n");
+                    grammarInfo.append("Ví dụ: ").append(lesson.getGrammarExamples().size()).append(" mẫu");
                 }
-                return false;
-            });
-        }
 
-        private String getTypeDisplayName(String type) {
-            switch (type.toLowerCase()) {
-                case "text": return "📝 Văn bản";
-                case "video": return "🎥 Video";
-                case "audio": return "🎧 Âm thanh";
-                case "quiz": return "❓ Quiz";
-                default: return "📄 Khác";
-            }
-        }
-
-        private void setLessonIcon(String type) {
-            switch (type.toLowerCase()) {
-                case "video":
-                    ivLessonIcon.setImageResource(android.R.drawable.ic_media_play);
-                    break;
-                case "audio":
-                    ivLessonIcon.setImageResource(android.R.drawable.ic_lock_silent_mode_off);
-                    break;
-                case "quiz":
-                    ivLessonIcon.setImageResource(android.R.drawable.ic_menu_help);
-                    break;
-                default:
-                    ivLessonIcon.setImageResource(android.R.drawable.ic_menu_edit);
-                    break;
+                tvGrammarInfo.setText(grammarInfo.toString());
+            } else {
+                tvGrammarInfo.setVisibility(View.GONE);
             }
         }
     }

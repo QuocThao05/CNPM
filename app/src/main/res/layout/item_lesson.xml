@@ -1,130 +1,132 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/card_lesson"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="8dp"
-    app:cardCornerRadius="12dp"
-    app:cardElevation="4dp"
-    android:foreground="?android:attr/selectableItemBackground"
-    android:clickable="true"
-    android:focusable="true">
+    android:layout_margin="4dp"
+    app:cardCornerRadius="8dp"
+    app:cardElevation="4dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
+        android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- Lesson Number -->
-        <androidx.cardview.widget.CardView
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            app:cardCornerRadius="24dp"
-            app:cardElevation="2dp"
-            app:cardBackgroundColor="?attr/colorPrimary">
+        <!-- Header với thứ tự và actions -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
             <TextView
-                android:id="@+id/tv_lesson_number"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:text="1"
+                android:id="@+id/tv_lesson_order"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@android:drawable/ic_menu_info_details"
+                android:padding="4dp"
+                android:text="Bài 1"
                 android:textColor="@android:color/white"
-                android:textStyle="bold"
-                android:textSize="14sp"
-                android:gravity="center" />
+                android:textSize="12sp"
+                android:textStyle="bold" />
 
-        </androidx.cardview.widget.CardView>
+            <View
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
 
-        <!-- Lesson Content -->
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:layout_marginStart="16dp">
+            <ImageView
+                android:id="@+id/iv_edit"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginEnd="8dp"
+                android:contentDescription="Chỉnh sửa"
+                android:src="@android:drawable/ic_menu_edit" />
 
-            <!-- Title and Type -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginBottom="4dp">
-
-                <TextView
-                    android:id="@+id/tv_lesson_title"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Lesson Title"
-                    android:textSize="16sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/text_primary"
-                    android:maxLines="2"
-                    android:ellipsize="end" />
-
-                <TextView
-                    android:id="@+id/tv_lesson_type"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="📝 Text"
-                    android:textSize="12sp"
-                    android:textColor="@color/accent_color"
-                    android:background="@drawable/bg_category_badge"
-                    android:paddingHorizontal="8dp"
-                    android:paddingVertical="2dp"
-                    android:layout_marginStart="8dp" />
-
-            </LinearLayout>
-
-            <!-- Time and Date -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal">
-
-                <TextView
-                    android:id="@+id/tv_estimated_time"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="⏱ 30 phút"
-                    android:textSize="12sp"
-                    android:textColor="@color/text_secondary" />
-
-                <View
-                    android:layout_width="0dp"
-                    android:layout_height="1dp"
-                    android:layout_weight="1" />
-
-                <TextView
-                    android:id="@+id/tv_created_date"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="📅 15/07/2024"
-                    android:textSize="12sp"
-                    android:textColor="@color/text_secondary" />
-
-            </LinearLayout>
+            <ImageView
+                android:id="@+id/iv_delete"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:contentDescription="Xóa"
+                android:src="@android:drawable/ic_menu_delete" />
 
         </LinearLayout>
 
-        <!-- Lesson Icon -->
-        <ImageView
-            android:id="@+id/iv_lesson_icon"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:src="@android:drawable/ic_menu_edit"
-            android:layout_marginStart="8dp"
-            android:layout_gravity="center_vertical" />
+        <!-- Tiêu đề bài học -->
+        <TextView
+            android:id="@+id/tv_lesson_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Tên bài học"
+            android:textSize="16sp"
+            android:textStyle="bold" />
 
-        <!-- Status Indicator -->
-        <View
-            android:id="@+id/view_status_indicator"
-            android:layout_width="4dp"
-            android:layout_height="match_parent"
-            android:background="@color/status_active"
-            android:layout_marginStart="8dp" />
+        <!-- Thông tin cơ bản -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/tv_lesson_type"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@android:drawable/ic_menu_sort_by_size"
+                android:padding="4dp"
+                android:text="Văn bản"
+                android:textColor="@android:color/white"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/tv_estimated_time"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:drawableStart="@android:drawable/ic_menu_recent_history"
+                android:drawablePadding="4dp"
+                android:text="30 phút"
+                android:textSize="12sp" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
+
+            <TextView
+                android:id="@+id/tv_publish_status"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Nháp"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+
+        </LinearLayout>
+
+        <!-- Thông tin Grammar (chỉ hiện cho bài học Grammar) -->
+        <TextView
+            android:id="@+id/tv_grammar_info"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:background="@android:color/background_light"
+            android:padding="8dp"
+            android:text="Quy tắc: Present Simple..."
+            android:textSize="12sp"
+            android:textStyle="italic"
+            android:visibility="gone" />
+
+        <!-- Ngày tạo -->
+        <TextView
+            android:id="@+id/tv_created_date"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="Tạo: 22/07/2025"
+            android:textColor="@android:color/darker_gray"
+            android:textSize="11sp" />
 
     </LinearLayout>
 

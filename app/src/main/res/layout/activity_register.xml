@@ -127,6 +127,28 @@
 
                                     </com.google.android.material.textfield.TextInputLayout>
 
+                                    <!-- Address Input -->
+                                    <com.google.android.material.textfield.TextInputLayout
+                                        android:id="@+id/til_address"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginBottom="16dp"
+                                        app:boxStrokeColor="@color/colorPrimary"
+                                        app:hintTextColor="@color/colorPrimary"
+                                        app:startIconDrawable="@android:drawable/ic_menu_mylocation"
+                                        app:startIconTint="@color/colorPrimary"
+                                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
+                                        <com.google.android.material.textfield.TextInputEditText
+                                            android:id="@+id/et_address"
+                                            android:layout_width="match_parent"
+                                            android:layout_height="wrap_content"
+                                            android:hint="Địa chỉ"
+                                            android:inputType="textPostalAddress"
+                                            android:textSize="16sp" />
+
+                                    </com.google.android.material.textfield.TextInputLayout>
+
                                     <!-- Password Input -->
                                     <com.google.android.material.textfield.TextInputLayout
                                         android:id="@+id/til_password"
