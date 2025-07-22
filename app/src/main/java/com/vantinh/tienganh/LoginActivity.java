@@ -166,30 +166,36 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void saveUserToFirestore(String userId, String email, String role) {
-        Map<String, Object> user = new HashMap<>();
-        user.put("email", email);
-        user.put("role", role);
-        user.put("name", getNameFromRole(role));
-        user.put("createdAt", new java.util.Date());
+        // Tạo đối tượng User với chỉ 5 trường dữ liệu theo yêu cầu: ID, address, email, fullName, role
+        Map<String, Object> userData = new HashMap<>();
+        userData.put("id", userId);
+        userData.put("email", email);
+        userData.put("fullName", getFullNameFromRole(role)); // Sử dụng fullName thay vì name
+        userData.put("address", ""); // Địa chỉ mặc định trống
+        userData.put("role", role);
+
+        // Không lưu createdAt, updatedAt để chỉ có đúng 5 trường theo yêu cầu
 
         db.collection("users").document(userId)
-                .set(user)
+                .set(userData)
                 .addOnSuccessListener(aVoid -> {
                     btnLogin.setEnabled(true);
                     btnLogin.setText("Đăng nhập");
                     Toast.makeText(this, "Tạo tài khoản thành công! Đang đăng nhập...", Toast.LENGTH_SHORT).show();
+                    android.util.Log.d("LoginActivity", "User saved with 5 fields: " + userData.toString());
                     redirectToRoleActivity(role);
                 })
                 .addOnFailureListener(e -> {
                     btnLogin.setEnabled(true);
                     btnLogin.setText("Đăng nhập");
+                    android.util.Log.e("LoginActivity", "Error saving user to Firestore", e);
                     Toast.makeText(this, "Lỗi lưu thông tin: " + e.getMessage(), Toast.LENGTH_LONG).show();
                 });
     }
 
-    private String getNameFromRole(String role) {
-        switch (role) {
-            case "admin": return "Admin";
+    private String getFullNameFromRole(String role) {
+        switch (role.toLowerCase()) {
+            case "admin": return "Quản trị viên";
             case "teacher": return "Giáo viên";
             case "student": return "Học viên";
             default: return "Người dùng";

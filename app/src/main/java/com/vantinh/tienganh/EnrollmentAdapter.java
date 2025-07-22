@@ -67,9 +67,9 @@ public class EnrollmentAdapter extends RecyclerView.Adapter<EnrollmentAdapter.En
         }
 
         public void bind(Enrollment enrollment) {
-            // Hiển thị tên học viên với fallback an toàn
-            String studentName = enrollment.getStudentName();
-            if (studentName == null || studentName.trim().isEmpty() || studentName.equals("Học viên")) {
+            // Hiển thị tên học viên - sử dụng fullName thay vì getStudentName()
+            String studentName = enrollment.getFullName();
+            if (studentName == null || studentName.trim().isEmpty()) {
                 studentName = "Đang tải...";
             }
             tvStudentName.setText("👤 " + studentName);
@@ -88,7 +88,8 @@ public class EnrollmentAdapter extends RecyclerView.Adapter<EnrollmentAdapter.En
             }
             tvCourseName.setText("📚 " + courseName);
 
-            tvStatus.setText(enrollment.getStatusDisplayName());
+            // Hiển thị status đơn giản vì class Enrollment mới không có getStatusDisplayName()
+            tvStatus.setText("Đã đăng ký");
 
             if (enrollment.getEnrollmentDate() != null) {
                 SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
@@ -97,15 +98,10 @@ public class EnrollmentAdapter extends RecyclerView.Adapter<EnrollmentAdapter.En
                 tvEnrollmentDate.setText("📅 Không có ngày");
             }
 
-            // Show/hide message
-            if (enrollment.getMessage() != null && !enrollment.getMessage().trim().isEmpty()) {
-                tvMessage.setVisibility(View.VISIBLE);
-                tvMessage.setText("💬 " + enrollment.getMessage());
-            } else {
-                tvMessage.setVisibility(View.GONE);
-            }
+            // Ẩn message vì class Enrollment mới không có getMessage()
+            tvMessage.setVisibility(View.GONE);
 
-            // Set status indicator color and show/hide action buttons
+            // Set status UI - đơn giản hóa vì không có status field
             setupStatusUI(enrollment);
 
             // Set click listeners
@@ -143,33 +139,11 @@ public class EnrollmentAdapter extends RecyclerView.Adapter<EnrollmentAdapter.En
         }
 
         private void setupStatusUI(Enrollment enrollment) {
-            String status = enrollment.getStatus();
-
-            switch (status) {
-                case "PENDING":
-                    btnApprove.setVisibility(View.VISIBLE);
-                    btnReject.setVisibility(View.VISIBLE);
-                    btnViewDetails.setVisibility(View.VISIBLE);
-                    break;
-
-                case "APPROVED":
-                    btnApprove.setVisibility(View.GONE);
-                    btnReject.setVisibility(View.GONE);
-                    btnViewDetails.setVisibility(View.VISIBLE);
-                    break;
-
-                case "REJECTED":
-                    btnApprove.setVisibility(View.GONE);
-                    btnReject.setVisibility(View.GONE);
-                    btnViewDetails.setVisibility(View.VISIBLE);
-                    break;
-
-                default:
-                    btnApprove.setVisibility(View.GONE);
-                    btnReject.setVisibility(View.GONE);
-                    btnViewDetails.setVisibility(View.VISIBLE);
-                    break;
-            }
+            // Vì class Enrollment mới không có status field, chúng ta sẽ ẩn các nút approve/reject
+            // và chỉ hiển thị nút view details
+            btnApprove.setVisibility(View.GONE);
+            btnReject.setVisibility(View.GONE);
+            btnViewDetails.setVisibility(View.VISIBLE);
         }
     }
 }

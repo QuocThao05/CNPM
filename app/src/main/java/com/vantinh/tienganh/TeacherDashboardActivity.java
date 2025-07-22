@@ -2,81 +2,52 @@ package com.vantinh.tienganh;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.Toast;
-import android.widget.TextView;
 import android.widget.Button;
-import androidx.appcompat.widget.Toolbar;
-import androidx.cardview.widget.CardView;
-
+import android.widget.TextView;
+import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.GridLayoutManager;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-
-import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import androidx.appcompat.widget.Toolbar;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.vantinh.tienganh.utils.RealtimeManager;
 
 public class TeacherDashboardActivity extends AppCompatActivity {
 
-    private TextView tvWelcome, tvTotalStudents, tvActiveCourses, tvPendingRequests;
-    private RecyclerView rvMyCourses, rvRecentStudents;
-    private BottomNavigationView bottomNavigation;
-    private CardView cardCreateContent, cardManageStudents, cardViewReports, cardSchedule;
-    private Button btnCourseRequests, btnCreateCourse, btnManageCourses;
-    private FloatingActionButton fabQuickAction;
     private Toolbar toolbar;
+    private TextView tvWelcome, tvCoursesCount, tvStudentsCount, tvPendingRequestsCount;
+    private Button btnManageCourses, btnViewRequests, btnCreateQuiz, btnCreateCourse;
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
+    private RealtimeManager realtimeManager;
+    private String currentTeacherId; // Đổi từ currentTeacherName sang currentTeacherId
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_teacher_dashboard);
 
-        mAuth = FirebaseAuth.getInstance();
-        db = FirebaseFirestore.getInstance();
-
         initViews();
         setupToolbar();
-        setupBottomNavigation();
+        initFirebase();
+        loadDashboardData();
         setupClickListeners();
-        loadTeacherData();
-        loadPendingRequestsCount();
     }
 
     private void initViews() {
-        // Core views that should exist
         toolbar = findViewById(R.id.toolbar);
-        bottomNavigation = findViewById(R.id.bottom_navigation);
-
-        // Optional views - add null checks
         tvWelcome = findViewById(R.id.tv_welcome);
-        tvTotalStudents = findViewById(R.id.tv_total_students);
-        tvActiveCourses = findViewById(R.id.tv_active_courses);
-        tvPendingRequests = findViewById(R.id.tv_pending_requests);
+        tvCoursesCount = findViewById(R.id.tv_courses_count);
+        tvStudentsCount = findViewById(R.id.tv_students_count);
+        tvPendingRequestsCount = findViewById(R.id.tv_pending_requests_count);
 
-        // Cards - may not exist in all layouts
-        cardCreateContent = findViewById(R.id.card_create_content);
-        cardManageStudents = findViewById(R.id.card_manage_students);
-        cardViewReports = findViewById(R.id.card_view_reports);
-        cardSchedule = findViewById(R.id.card_schedule);
-
-        // Buttons - add null checks
-        btnCourseRequests = findViewById(R.id.btn_course_requests);
-        btnCreateCourse = findViewById(R.id.btn_create_course);
         btnManageCourses = findViewById(R.id.btn_manage_courses);
-
-        // RecyclerViews - may not exist
-        rvMyCourses = findViewById(R.id.rv_my_courses);
-        rvRecentStudents = findViewById(R.id.rv_recent_students);
-
-        // FAB - may not exist
-        fabQuickAction = findViewById(R.id.fab_quick_action);
+        btnViewRequests = findViewById(R.id.btn_view_requests);
+        btnCreateQuiz = findViewById(R.id.btn_create_quiz);
+        btnCreateCourse = findViewById(R.id.btn_create_course);
     }
 
     private void setupToolbar() {
@@ -84,6 +55,122 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         if (getSupportActionBar() != null) {
             getSupportActionBar().setTitle("Bảng điều khiển giáo viên");
         }
+    }
+
+    private void initFirebase() {
+        mAuth = FirebaseAuth.getInstance();
+        db = FirebaseFirestore.getInstance();
+        realtimeManager = RealtimeManager.getInstance();
+    }
+
+    private void setupClickListeners() {
+        btnManageCourses.setOnClickListener(v -> {
+            startActivity(new Intent(this, CourseManagementActivity.class));
+        });
+
+        // Thêm click listener cho nút "View Requests"
+        btnViewRequests.setOnClickListener(v -> {
+            startActivity(new Intent(this, CourseRequestManagementActivity.class));
+        });
+
+        btnCreateQuiz.setOnClickListener(v -> {
+            startActivity(new Intent(this, SelectCourseForQuizActivity.class));
+        });
+
+        btnCreateCourse.setOnClickListener(v -> {
+            startActivity(new Intent(this, CreateCourseActivity.class));
+        });
+    }
+
+    private void loadDashboardData() {
+        String teacherId = mAuth.getCurrentUser().getUid();
+        currentTeacherId = teacherId; // Lưu teacherId trực tiếp
+
+        // Load teacher info
+        db.collection("users").document(teacherId)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        String fullName = documentSnapshot.getString("fullName");
+                        tvWelcome.setText("Xin chào, " + fullName);
+
+                        // Load counts với teacherId
+                        loadCoursesCount(teacherId);
+                        loadStudentsCount(teacherId);
+                        setupRealTimePendingRequestsCount(); // Sử dụng teacherId
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "Lỗi khi tải thông tin", Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    private void loadCoursesCount(String teacherId) {
+        db.collection("courses")
+                .whereEqualTo("teacherId", teacherId)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    int count = queryDocumentSnapshots.size();
+                    tvCoursesCount.setText(String.valueOf(count));
+                })
+                .addOnFailureListener(e -> {
+                    tvCoursesCount.setText("0");
+                });
+    }
+
+    private void loadStudentsCount(String teacherId) {
+        db.collection("enrollments")
+                .whereEqualTo("teacherId", teacherId)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    int count = queryDocumentSnapshots.size();
+                    tvStudentsCount.setText(String.valueOf(count));
+                })
+                .addOnFailureListener(e -> {
+                    tvStudentsCount.setText("0");
+                });
+    }
+
+    // Sửa để hiển thị TẤT CẢ pending requests (không filter theo teacherId)
+    private void setupRealTimePendingRequestsCount() {
+        // Đơn giản hóa - đếm tất cả pending requests
+        db.collection("courseRequests")
+                .whereEqualTo("status", "pending")
+                .addSnapshotListener((queryDocumentSnapshots, e) -> {
+                    if (e != null) {
+                        Log.e("TeacherDashboard", "Error listening to pending requests", e);
+                        tvPendingRequestsCount.setText("0");
+                        return;
+                    }
+
+                    if (queryDocumentSnapshots != null) {
+                        int count = queryDocumentSnapshots.size();
+                        Log.d("TeacherDashboard", "Real-time update: " + count + " pending requests total");
+
+                        runOnUiThread(() -> {
+                            tvPendingRequestsCount.setText(String.valueOf(count));
+
+                            if (count > 0) {
+                                btnViewRequests.setText("Xem yêu cầu (" + count + ")");
+                                // Animation nhấp nháy khi có yêu cầu mới
+                                btnViewRequests.animate()
+                                        .scaleX(1.1f)
+                                        .scaleY(1.1f)
+                                        .setDuration(200)
+                                        .withEndAction(() -> {
+                                            btnViewRequests.animate()
+                                                    .scaleX(1f)
+                                                    .scaleY(1f)
+                                                    .setDuration(200)
+                                                    .start();
+                                        })
+                                        .start();
+                            } else {
+                                btnViewRequests.setText("Xem yêu cầu");
+                            }
+                        });
+                    }
+                });
     }
 
     @Override
@@ -102,195 +189,27 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    private void setupBottomNavigation() {
-        bottomNavigation.setOnItemSelectedListener(item -> {
-            int itemId = item.getItemId();
-            if (itemId == R.id.nav_home) {
-                // Already on home
-                return true;
-            } else if (itemId == R.id.nav_courses) {
-                startActivity(new Intent(this, CourseManagementActivity.class));
-                return true;
-            } else if (itemId == R.id.nav_students) {
-                startActivity(new Intent(this, EnrollmentManagementActivity.class));
-                return true;
-            } else if (itemId == R.id.nav_profile) {
-                startActivity(new Intent(this, UpdateProfileActivity.class));
-                return true;
-            }
-            return false;
-        });
-    }
-
-    private void setupClickListeners() {
-        // Quick action cards
-        if (cardCreateContent != null) {
-            cardCreateContent.setOnClickListener(v -> {
-                startActivity(new Intent(this, ContentCreationActivity.class));
-            });
-        }
-
-        if (cardManageStudents != null) {
-            cardManageStudents.setOnClickListener(v -> {
-                startActivity(new Intent(this, EnrollmentManagementActivity.class));
-            });
-        }
-
-        if (cardViewReports != null) {
-            cardViewReports.setOnClickListener(v -> {
-                startActivity(new Intent(this, StudentReportActivity.class));
-            });
-        }
-
-        if (cardSchedule != null) {
-            cardSchedule.setOnClickListener(v -> {
-                startActivity(new Intent(this, PersonalScheduleActivity.class));
-            });
-        }
-
-        // Buttons
-        if (btnCourseRequests != null) {
-            btnCourseRequests.setOnClickListener(v -> {
-                // Navigate to EnrollmentManagementActivity to view pending enrollment requests
-                startActivity(new Intent(this, EnrollmentManagementActivity.class));
-            });
-        }
-
-        if (btnCreateCourse != null) {
-            btnCreateCourse.setOnClickListener(v -> {
-                startActivity(new Intent(this, CreateCourseActivity.class));
-            });
-        }
-
-        if (btnManageCourses != null) {
-            btnManageCourses.setOnClickListener(v -> {
-                startActivity(new Intent(this, CourseManagementActivity.class));
-            });
-        }
-
-        if (fabQuickAction != null) {
-            fabQuickAction.setOnClickListener(v -> {
-                startActivity(new Intent(this, CreateCourseActivity.class));
-            });
-        }
-    }
-
-    private void loadTeacherData() {
-        if (mAuth.getCurrentUser() != null) {
-            String teacherId = mAuth.getCurrentUser().getUid();
-            db.collection("users").document(teacherId)
-                    .get()
-                    .addOnSuccessListener(documentSnapshot -> {
-                        if (documentSnapshot.exists()) {
-                            String name = documentSnapshot.getString("name");
-                            if (name != null && !name.isEmpty() && tvWelcome != null) {
-                                tvWelcome.setText("Chào mừng, " + name + "!");
-                            }
-                        }
-                    })
-                    .addOnFailureListener(e -> {
-                        Toast.makeText(this, "Lỗi tải thông tin giáo viên", Toast.LENGTH_SHORT).show();
-                    });
-
-            // Load courses count
-            loadCoursesCount(teacherId);
-            loadStudentsCount(teacherId);
-        }
-    }
-
-    private void loadCoursesCount(String teacherId) {
-        db.collection("courses")
-                .whereEqualTo("teacherId", teacherId)
-                .whereEqualTo("isActive", true)
-                .get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
-                    int count = queryDocumentSnapshots.size();
-                    if (tvActiveCourses != null) {
-                        tvActiveCourses.setText(String.valueOf(count));
-                    }
-                })
-                .addOnFailureListener(e -> {
-                    if (tvActiveCourses != null) {
-                        tvActiveCourses.setText("0");
-                    }
-                });
-    }
-
-    private void loadStudentsCount(String teacherId) {
-        db.collection("enrollments")
-                .whereEqualTo("teacherId", teacherId)
-                .get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
-                    int count = queryDocumentSnapshots.size();
-                    if (tvTotalStudents != null) {
-                        tvTotalStudents.setText(String.valueOf(count));
-                    }
-                })
-                .addOnFailureListener(e -> {
-                    if (tvTotalStudents != null) {
-                        tvTotalStudents.setText("0");
-                    }
-                });
-    }
-
-    private void loadPendingRequestsCount() {
-        if (mAuth.getCurrentUser() == null) return;
-
-        String teacherId = mAuth.getCurrentUser().getUid();
-
-        // Load pending enrollment requests from enrollments collection
-        // Fix the Firestore query to avoid index requirement
-        db.collection("enrollments")
-                .whereEqualTo("teacherId", teacherId)
-                .whereEqualTo("status", "PENDING")
-                .orderBy("enrollmentDate", com.google.firebase.firestore.Query.Direction.DESCENDING)
-                .get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
-                    int pendingCount = queryDocumentSnapshots.size();
-                    android.util.Log.d("TeacherDashboard", "Found " + pendingCount + " pending enrollment requests");
-
-                    if (tvPendingRequests != null) {
-                        tvPendingRequests.setText(String.valueOf(pendingCount));
-                    }
-                })
-                .addOnFailureListener(e -> {
-                    android.util.Log.e("TeacherDashboard", "Error loading pending requests", e);
-
-                    // Fallback: try simpler query without ordering to avoid index requirement
-                    db.collection("enrollments")
-                            .whereEqualTo("teacherId", teacherId)
-                            .whereEqualTo("status", "PENDING")
-                            .get()
-                            .addOnSuccessListener(queryDocumentSnapshots -> {
-                                int pendingCount = queryDocumentSnapshots.size();
-                                android.util.Log.d("TeacherDashboard", "Fallback query found " + pendingCount + " pending enrollment requests");
-
-                                if (tvPendingRequests != null) {
-                                    tvPendingRequests.setText(String.valueOf(pendingCount));
-                                }
-                            })
-                            .addOnFailureListener(fallbackError -> {
-                                android.util.Log.e("TeacherDashboard", "Fallback query also failed", fallbackError);
-                                if (tvPendingRequests != null) {
-                                    tvPendingRequests.setText("0");
-                                }
-                                Toast.makeText(this, "Không thể tải danh sách yêu cầu đang chờ", Toast.LENGTH_SHORT).show();
-                            });
-                });
-    }
-
     private void logout() {
-        new androidx.appcompat.app.AlertDialog.Builder(this)
-                .setTitle("Đăng xuất")
-                .setMessage("Bạn có chắc chắn muốn đăng xuất?")
-                .setPositiveButton("Đăng xuất", (dialog, which) -> {
-                    mAuth.signOut();
-                    Intent intent = new Intent(this, LoginActivity.class);
-                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                    startActivity(intent);
-                    finish();
-                })
-                .setNegativeButton("Hủy", null)
-                .show();
+        mAuth.signOut();
+        Intent intent = new Intent(this, LoginActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        finish();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Refresh data khi quay lại activity
+        loadDashboardData();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        // Cleanup listeners khi destroy activity
+        if (realtimeManager != null) {
+            realtimeManager.removeAllListeners();
+        }
     }
 }

@@ -63,7 +63,33 @@ public class CourseManagementActivity extends AppCompatActivity {
     }
 
     private void setupRecyclerView() {
-        courseAdapter = new CourseAdapter(courseList, this::onCourseClick);
+        courseAdapter = new CourseAdapter(courseList, new CourseAdapter.OnCourseClickListener() {
+            @Override
+            public void onCourseClick(Course course) {
+                // Xem chi tiết khóa học
+                Intent intent = new Intent(CourseManagementActivity.this, EditCourseActivity.class);
+                intent.putExtra("courseId", course.getId());
+                startActivity(intent);
+            }
+
+            @Override
+            public void onManageLessons(Course course) {
+                // Chuyển đến quản lý bài học
+                Intent intent = new Intent(CourseManagementActivity.this, LessonManagementActivity.class);
+                intent.putExtra("courseId", course.getId());
+                intent.putExtra("courseTitle", course.getTitle());
+                intent.putExtra("courseCategory", course.getCategory());
+                startActivity(intent);
+            }
+
+            @Override
+            public void onEditCourse(Course course) {
+                // Chỉnh sửa khóa học
+                Intent intent = new Intent(CourseManagementActivity.this, EditCourseActivity.class);
+                intent.putExtra("courseId", course.getId());
+                startActivity(intent);
+            }
+        });
         rvCourses.setLayoutManager(new LinearLayoutManager(this));
         rvCourses.setAdapter(courseAdapter);
     }
@@ -73,14 +99,6 @@ public class CourseManagementActivity extends AppCompatActivity {
             Intent intent = new Intent(this, CreateCourseActivity.class);
             startActivity(intent);
         });
-    }
-
-    private void onCourseClick(Course course) {
-        // Navigate to EditCourseActivity instead of CourseLessonsActivity
-        Intent intent = new Intent(this, EditCourseActivity.class);
-        intent.putExtra("courseId", course.getId());
-        intent.putExtra("courseTitle", course.getTitle());
-        startActivity(intent);
     }
 
     private void loadCourses() {

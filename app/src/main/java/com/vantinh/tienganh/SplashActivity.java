@@ -1,41 +1,68 @@
 package com.vantinh.tienganh;
 
-        import android.content.Intent;
-        import android.os.Bundle;
-        import android.os.Handler;
-        import android.os.Looper;
+import android.content.Intent;
+import android.os.Bundle;
+import android.os.Handler;
+import androidx.appcompat.app.AppCompatActivity;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.FirebaseFirestore;
 
-        import androidx.appcompat.app.AppCompatActivity;
+public class SplashActivity extends AppCompatActivity {
 
-        import com.google.firebase.auth.FirebaseAuth;
-        import com.google.firebase.auth.FirebaseUser;
+    private FirebaseAuth mAuth;
+    private FirebaseFirestore db;
 
-        public class SplashActivity extends AppCompatActivity {
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_splash);
 
-            private static final int SPLASH_DELAY = 2000; // 2 seconds
-            private FirebaseAuth mAuth;
+        mAuth = FirebaseAuth.getInstance();
+        db = FirebaseFirestore.getInstance();
 
-            @Override
-            protected void onCreate(Bundle savedInstanceState) {
-                super.onCreate(savedInstanceState);
-                setContentView(R.layout.activity_splash);
+        // Delay 2 giây rồi kiểm tra user role
+        new Handler().postDelayed(this::checkUserRoleAndNavigate, 2000);
+    }
 
-                mAuth = FirebaseAuth.getInstance();
+    private void checkUserRoleAndNavigate() {
+        if (mAuth.getCurrentUser() != null) {
+            String userId = mAuth.getCurrentUser().getUid();
 
-                // Delay for splash screen
-                new Handler(Looper.getMainLooper()).postDelayed(this::checkUserAuthentication, SPLASH_DELAY);
-            }
+            db.collection("users").document(userId)
+                    .get()
+                    .addOnSuccessListener(documentSnapshot -> {
+                        if (documentSnapshot.exists()) {
+                            String role = documentSnapshot.getString("role");
+                            Intent intent;
 
-            private void checkUserAuthentication() {
-                FirebaseUser currentUser = mAuth.getCurrentUser();
+                            switch (role != null ? role : "student") {
+                                case "teacher":
+                                    intent = new Intent(this, TeacherDashboardActivity.class);
+                                    break;
+                                case "admin":
+                                    intent = new Intent(this, AdminDashboardActivity.class);
+                                    break;
+                                default:
+                                    intent = new Intent(this, StudentDashboardActivity.class);
+                                    break;
+                            }
 
-                if (currentUser != null) {
-                    // User is signed in, redirect to main activity
-                    startActivity(new Intent(SplashActivity.this, MainActivity.class));
-                } else {
-                    // No user is signed in, redirect to login
-                    startActivity(new Intent(SplashActivity.this, LoginActivity.class));
-                }
-                finish();
-            }
+                            startActivity(intent);
+                            finish();
+                        } else {
+                            // User document không tồn tại, chuyển về login
+                            navigateToLogin();
+                        }
+                    })
+                    .addOnFailureListener(e -> navigateToLogin());
+        } else {
+            navigateToLogin();
         }
+    }
+
+    private void navigateToLogin() {
+        Intent intent = new Intent(this, LoginActivity.class);
+        startActivity(intent);
+        finish();
+    }
+}

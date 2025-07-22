@@ -2,6 +2,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -10,131 +13,85 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.TiengAnh"
+        android:theme="@style/Theme.Final"
         tools:targetApi="31">
 
-        <!-- Dashboard Activities -->
+        <!-- Main Activity (Launcher) -->
         <activity
-            android:name=".AdminDashboardActivity"
-            android:exported="false" />
-        <activity
-            android:name=".TeacherDashboardActivity"
-            android:exported="false" />
-        <activity
-            android:name=".StudentDashboardActivity"
-            android:exported="false" />
-
-        <!-- Course Request Management -->
-        <activity
-            android:name=".CourseRequestManagementActivity"
-            android:exported="false" />
-
-        <!-- Splash Activity - Entry Point -->
-        <activity
-            android:name=".SplashActivity"
-            android:exported="true"
-            android:theme="@style/Theme.AppCompat.Light.NoActionBar">
+            android:name=".MainActivity"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
-        <!-- Main Activity -->
-        <activity
-            android:name=".MainActivity"
-            android:exported="false" />
-
-        <!-- Authentication Activities -->
-        <activity
-            android:name=".LoginActivity"
-            android:exported="false" />
-        <activity
-            android:name=".RegisterActivity"
-            android:exported="false" />
-
-        <!-- Home Activity -->
+        <!-- Home Activity - Thêm vào để khắc phục lỗi -->
         <activity
             android:name=".HomeActivity"
-            android:exported="false" />
+            android:theme="@style/Theme.Final.NoActionBar" />
 
-        <!-- Student Activities -->
-        <activity
-            android:name=".CourseListActivity"
-            android:exported="false" />
+        <!-- Splash Activity -->
+        <activity android:name=".SplashActivity" />
+
+        <!-- Authentication Activities -->
+        <activity android:name=".LoginActivity" />
+        <activity android:name=".RegisterActivity" />
+
+        <!-- Dashboard Activities -->
+        <activity android:name=".TeacherDashboardActivity" />
+        <activity android:name=".StudentDashboardActivity" />
+        <activity android:name=".AdminDashboardActivity" />
+
+        <!-- Course Activities -->
         <activity
             android:name=".StudentCourseSearchActivity"
-            android:exported="false" />
-        <activity
-            android:name=".PersonalScheduleActivity"
-            android:exported="false" />
-        <activity
-            android:name=".StudyProgressActivity"
-            android:exported="false" />
-        <activity
-            android:name=".QuizActivity"
-            android:exported="false" />
+            android:theme="@style/Theme.Final.NoActionBar" />
 
-        <!-- Course Management Activities -->
         <activity
-            android:name=".CourseManagementActivity"
-            android:exported="false" />
-        <activity
-            android:name=".CreateCourseActivity"
-            android:exported="false" />
-        <activity
-            android:name=".CourseLessonsActivity"
-            android:exported="false" />
-        <activity
-            android:name=".CreateLessonActivity"
-            android:exported="false" />
-        <activity
-            android:name=".EditLessonActivity"
-            android:exported="false" />
-        <activity
-            android:name=".LessonDetailActivity"
-            android:exported="false" />
+            android:name=".CourseRequestManagementActivity"
+            android:label="Quản lý yêu cầu khóa học"
+            android:parentActivityName=".TeacherDashboardActivity" />
 
-        <!-- Student Report Activities -->
-        <activity
-            android:name=".StudentReportActivity"
-            android:exported="false" />
-        <activity
-            android:name=".StudentDetailReportActivity"
-            android:exported="false" />
-        <activity
-            android:name=".StudentProgressDetailActivity"
-            android:exported="false" />
+        <!-- Student Learning Activities -->
+        <activity android:name=".StudentMyCoursesActivity" />
+        <activity android:name=".StudentCourseLessonsActivity" />
+        <activity android:name=".StudentCourseDetailActivity" />
+        <activity android:name=".StudentLessonLearningActivity" />
 
-        <!-- Course Student Management -->
+        <!-- Quiz Management Activities -->
         <activity
-            android:name=".CourseStudentsActivity"
-            android:exported="false" />
+            android:name=".SelectCourseForQuizActivity"
+            android:label="Chọn khóa học"
+            android:parentActivityName=".TeacherDashboardActivity" />
+        <activity
+            android:name=".CreateQuizActivity"
+            android:label="Tạo bài kiểm tra"
+            android:parentActivityName=".SelectCourseForQuizActivity" />
 
-        <!-- Edit Course Activity -->
-        <activity
-            android:name=".EditCourseActivity"
-            android:exported="false" />
-
-        <!-- Content and Management Activities -->
-        <activity
-            android:name=".ContentCreationActivity"
-            android:exported="false" />
-        <activity
-            android:name=".EnrollmentManagementActivity"
-            android:exported="false" />
-        <activity
-            android:name=".AdminAccountManagementActivity"
-            android:exported="false" />
-        <activity
-            android:name=".SystemStatisticsActivity"
-            android:exported="false" />
-        <activity
-            android:name=".UpdateProfileActivity"
-            android:exported="false" />
-        <activity
-            android:name=".FeedbackActivity"
-            android:exported="false" />
+        <!-- Other Activities -->
+        <activity android:name=".CourseManagementActivity" />
+        <activity android:name=".LessonManagementActivity" />
+        <activity android:name=".EnrollmentManagementActivity" />
+        <activity android:name=".CreateCourseActivity" />
+        <activity android:name=".EditCourseActivity" />
+        <activity android:name=".CourseListActivity" />
+        <activity android:name=".CourseLessonsActivity" />
+        <activity android:name=".CourseStudentsActivity" />
+        <activity android:name=".CreateLessonActivity" />
+        <activity android:name=".EditLessonActivity" />
+        <activity android:name=".LessonDetailActivity" />
+        <activity android:name=".PersonalScheduleActivity" />
+        <activity android:name=".StudyProgressActivity" />
+        <activity android:name=".StudentProgressDetailActivity" />
+        <activity android:name=".QuizActivity" />
+        <activity android:name=".UpdateProfileActivity" />
+        <activity android:name=".FeedbackActivity" />
+        <activity android:name=".AdminAccountManagementActivity" />
+        <activity android:name=".ContentCreationActivity" />
+        <activity android:name=".SystemStatisticsActivity" />
+        <activity android:name=".StudentReportActivity" />
+        <activity android:name=".StudentDetailReportActivity" />
 
     </application>
 

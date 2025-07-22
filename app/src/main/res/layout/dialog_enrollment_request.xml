@@ -3,42 +3,188 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:padding="24dp">
 
     <TextView
-        android:id="@+id/tv_course_name"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Tên khóa học"
+        android:text="Yêu cầu tham gia khóa học"
         android:textSize="18sp"
         android:textStyle="bold"
-        android:textColor="@color/colorPrimary"
-        android:layout_marginBottom="8dp" />
-
-    <TextView
-        android:id="@+id/tv_teacher_name"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Giáo viên: "
-        android:textSize="14sp"
+        android:textColor="@android:color/black"
+        android:gravity="center"
         android:layout_marginBottom="16dp" />
 
+    <!-- Course Name -->
     <TextView
-        android:layout_width="wrap_content"
+        android:id="@+id/tv_course_name"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Tin nhắn cho giáo viên (tùy chọn):"
-        android:textSize="14sp"
+        android:text="Tên khóa học"
+        android:textSize="16sp"
         android:textStyle="bold"
+        android:textColor="@android:color/black"
         android:layout_marginBottom="8dp" />
 
+    <!-- Teacher Name -->
+    <TextView
+        android:id="@+id/tv_teacher_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Giáo viên: Tên giáo viên"
+        android:textSize="14sp"
+        android:textColor="@android:color/darker_gray"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Message Label -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Lời nhắn (tùy chọn):"
+        android:textStyle="bold"
+        android:textSize="14sp"
+        android:layout_marginBottom="8dp" />
+
+    <!-- Message EditText -->
     <EditText
         android:id="@+id/et_message"
         android:layout_width="match_parent"
-        android:layout_height="100dp"
+        android:layout_height="120dp"
         android:gravity="top"
-        android:hint="Hãy giới thiệu về bản thân và lý do muốn tham gia khóa học này..."
+        android:hint="Nhập lời nhắn của bạn..."
         android:inputType="textMultiLine"
-        android:background="@drawable/edittext_background"
-        android:padding="12dp" />
+        android:lines="5"
+        android:maxLines="5"
+        android:scrollbars="vertical"
+        android:background="@android:drawable/edit_text"
+        android:padding="12dp"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Student Details (for display in teacher view) -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="8dp"
+        android:visibility="gone"
+        android:id="@+id/layout_student_details">
+
+        <TextView
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"
+            android:text="Học viên:"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tv_dialog_student_name"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Tên học viên" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="8dp"
+        android:visibility="gone"
+        android:id="@+id/layout_student_email">
+
+        <TextView
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"
+            android:text="Email:"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tv_dialog_student_email"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="email@example.com" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="16dp"
+        android:visibility="gone"
+        android:id="@+id/layout_request_date">
+
+        <TextView
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"
+            android:text="Ngày gửi:"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tv_dialog_request_date"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="01/01/2024 10:00" />
+
+    </LinearLayout>
+
+    <!-- Message Display (for teacher view) -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Lời nhắn:"
+        android:textStyle="bold"
+        android:layout_marginBottom="8dp"
+        android:visibility="gone"
+        android:id="@+id/label_message" />
+
+    <TextView
+        android:id="@+id/tv_dialog_message"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Lời nhắn từ học viên"
+        android:background="#F5F5F5"
+        android:padding="12dp"
+        android:layout_marginBottom="24dp"
+        android:visibility="gone" />
+
+    <!-- Buttons for teacher actions -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="end"
+        android:visibility="gone"
+        android:id="@+id/layout_teacher_actions">
+
+        <Button
+            android:id="@+id/btn_dialog_reject"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Từ chối"
+            android:backgroundTint="#F44336"
+            android:textColor="@android:color/white"
+            android:layout_marginEnd="8dp" />
+
+        <Button
+            android:id="@+id/btn_dialog_approve"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Phê duyệt"
+            android:backgroundTint="#4CAF50"
+            android:textColor="@android:color/white"
+            android:layout_marginEnd="8dp" />
+
+        <Button
+            android:id="@+id/btn_dialog_close"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Đóng"
+            android:backgroundTint="#757575"
+            android:textColor="@android:color/white" />
+
+    </LinearLayout>
 
 </LinearLayout>

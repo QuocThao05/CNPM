@@ -81,7 +81,7 @@ public class StudentCourseAdapter extends RecyclerView.Adapter<StudentCourseAdap
         public void bind(Course course) {
             tvCourseTitle.setText(course.getTitle());
             tvCourseDescription.setText(course.getDescription());
-            tvTeacherName.setText("👨‍🏫 " + course.getTeacherName());
+            tvTeacherName.setText("📚 " + course.getCategory()); // Thay thế teacherName bằng category
             tvCourseLevel.setText(course.getLevel());
             tvCourseCategory.setText(course.getCategory());
             tvCourseDuration.setText(course.getDuration() + " giờ");

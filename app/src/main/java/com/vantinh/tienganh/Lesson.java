@@ -9,30 +9,45 @@ public class Lesson {
     private String content;
     private String courseId;
     private String teacherId;
-    private int order;
     private String type; // text, video, audio, quiz
-    private String videoUrl;
-    private String audioUrl;
-    private List<String> attachments;
+    private String category; // Grammar, Vocabulary, etc.
+    private int estimatedTime; // in minutes
+    private int order; // lesson order in course
     private Date createdAt;
     private Date updatedAt;
     private boolean isPublished;
-    private int estimatedTime; // in minutes
 
+    // Grammar-specific fields
+    private String grammarRule;
+    private String grammarStructure;
+    private List<String> grammarExamples;
+    private List<String> grammarUsage;
+    private List<String> grammarNotes;
+
+    // Vocabulary-specific fields (for future use)
+    private List<String> vocabularyWords;
+    private List<String> definitions;
+    private List<String> pronunciations;
+
+    // Learning progress fields
+    private boolean isAccessible = false; // Có thể truy cập học hay không
+    private boolean isLocked = true; // Bài học có bị khóa không
+    private boolean isCompleted = false; // Đã hoàn thành chưa
+
+    // Constructors
     public Lesson() {
-        // Required empty constructor for Firebase
+        // Default constructor required for Firestore
     }
 
-    public Lesson(String title, String content, String courseId, String teacherId, int order) {
+    public Lesson(String title, String content, String courseId, String teacherId) {
         this.title = title;
         this.content = content;
         this.courseId = courseId;
         this.teacherId = teacherId;
-        this.order = order;
-        this.type = "text";
         this.createdAt = new Date();
         this.updatedAt = new Date();
         this.isPublished = false;
+        this.type = "text";
         this.estimatedTime = 30;
     }
 
@@ -52,20 +67,17 @@ public class Lesson {
     public String getTeacherId() { return teacherId; }
     public void setTeacherId(String teacherId) { this.teacherId = teacherId; }
 
-    public int getOrder() { return order; }
-    public void setOrder(int order) { this.order = order; }
-
     public String getType() { return type; }
     public void setType(String type) { this.type = type; }
 
-    public String getVideoUrl() { return videoUrl; }
-    public void setVideoUrl(String videoUrl) { this.videoUrl = videoUrl; }
+    public String getCategory() { return category; }
+    public void setCategory(String category) { this.category = category; }
 
-    public String getAudioUrl() { return audioUrl; }
-    public void setAudioUrl(String audioUrl) { this.audioUrl = audioUrl; }
+    public int getEstimatedTime() { return estimatedTime; }
+    public void setEstimatedTime(int estimatedTime) { this.estimatedTime = estimatedTime; }
 
-    public List<String> getAttachments() { return attachments; }
-    public void setAttachments(List<String> attachments) { this.attachments = attachments; }
+    public int getOrder() { return order; }
+    public void setOrder(int order) { this.order = order; }
 
     public Date getCreatedAt() { return createdAt; }
     public void setCreatedAt(Date createdAt) { this.createdAt = createdAt; }
@@ -76,6 +88,54 @@ public class Lesson {
     public boolean isPublished() { return isPublished; }
     public void setPublished(boolean published) { isPublished = published; }
 
-    public int getEstimatedTime() { return estimatedTime; }
-    public void setEstimatedTime(int estimatedTime) { this.estimatedTime = estimatedTime; }
+    // Grammar-specific getters and setters
+    public String getGrammarRule() { return grammarRule; }
+    public void setGrammarRule(String grammarRule) { this.grammarRule = grammarRule; }
+
+    public String getGrammarStructure() { return grammarStructure; }
+    public void setGrammarStructure(String grammarStructure) { this.grammarStructure = grammarStructure; }
+
+    public List<String> getGrammarExamples() { return grammarExamples; }
+    public void setGrammarExamples(List<String> grammarExamples) { this.grammarExamples = grammarExamples; }
+
+    public List<String> getGrammarUsage() { return grammarUsage; }
+    public void setGrammarUsage(List<String> grammarUsage) { this.grammarUsage = grammarUsage; }
+
+    public List<String> getGrammarNotes() { return grammarNotes; }
+    public void setGrammarNotes(List<String> grammarNotes) { this.grammarNotes = grammarNotes; }
+
+    // Vocabulary-specific getters and setters (for future use)
+    public List<String> getVocabularyWords() { return vocabularyWords; }
+    public void setVocabularyWords(List<String> vocabularyWords) { this.vocabularyWords = vocabularyWords; }
+
+    public List<String> getDefinitions() { return definitions; }
+    public void setDefinitions(List<String> definitions) { this.definitions = definitions; }
+
+    public List<String> getPronunciations() { return pronunciations; }
+    public void setPronunciations(List<String> pronunciations) { this.pronunciations = pronunciations; }
+
+    // Learning progress getters and setters
+    public boolean isAccessible() { return isAccessible; }
+    public void setAccessible(boolean accessible) { isAccessible = accessible; }
+
+    public boolean isLocked() { return isLocked; }
+    public void setLocked(boolean locked) { isLocked = locked; }
+
+    public boolean isCompleted() { return isCompleted; }
+    public void setCompleted(boolean completed) { isCompleted = completed; }
+
+    // Helper methods
+    public String getEstimatedTimeString() {
+        return estimatedTime + " phút";
+    }
+
+    public String getTypeDisplayName() {
+        switch (type) {
+            case "text": return "Văn bản";
+            case "video": return "Video";
+            case "audio": return "Âm thanh";
+            case "quiz": return "Quiz";
+            default: return "Văn bản";
+        }
+    }
 }

@@ -70,7 +70,24 @@ public class CourseLessonsActivity extends AppCompatActivity {
     }
 
     private void setupRecyclerView() {
-        lessonAdapter = new LessonAdapter(lessonList, this::onLessonClick);
+        lessonAdapter = new LessonAdapter(lessonList, new LessonAdapter.OnLessonClickListener() {
+            @Override
+            public void onLessonClick(Lesson lesson) {
+                CourseLessonsActivity.this.onLessonClick(lesson);
+            }
+
+            @Override
+            public void onLessonEdit(Lesson lesson) {
+                // Handle edit action if needed
+                onLessonClick(lesson);
+            }
+
+            @Override
+            public void onLessonDelete(Lesson lesson) {
+                // Handle delete action if needed
+                onLessonClick(lesson);
+            }
+        });
         rvLessons.setLayoutManager(new LinearLayoutManager(this));
         rvLessons.setAdapter(lessonAdapter);
     }

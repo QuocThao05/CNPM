@@ -132,30 +132,32 @@ public class UpdateProfileActivity extends AppCompatActivity {
                     .get()
                     .addOnSuccessListener(documentSnapshot -> {
                         if (documentSnapshot.exists()) {
-                            // Load personal information
-                            String fullName = documentSnapshot.getString("fullName");
-                            String email = documentSnapshot.getString("email");
-                            String phone = documentSnapshot.getString("phone");
-                            String bio = documentSnapshot.getString("bio");
-                            String currentLevel = documentSnapshot.getString("currentLevel");
+                            // Sử dụng class User để load dữ liệu
+                            User user = User.fromMap(documentSnapshot.getData());
 
-                            // Set data to views
-                            if (etFullName != null && fullName != null) {
-                                etFullName.setText(fullName);
+                            // Load personal information với đầy đủ các trường
+                            if (etFullName != null && user.getFullName() != null) {
+                                etFullName.setText(user.getFullName());
                             }
-                            if (etEmail != null && email != null) {
-                                etEmail.setText(email);
+                            if (etEmail != null && user.getEmail() != null) {
+                                etEmail.setText(user.getEmail());
                                 etEmail.setEnabled(false); // Email usually not editable
                             }
-                            if (etPhone != null && phone != null) {
-                                etPhone.setText(phone);
+                            if (etPhone != null) {
+                                // Thêm trường phone nếu có trong User class, hoặc để trống
+                                etPhone.setText("");
                             }
-                            if (etBio != null && bio != null) {
-                                etBio.setText(bio);
+                            if (etBio != null) {
+                                // Thêm trường bio nếu có trong User class, hoặc để trống
+                                etBio.setText("");
                             }
-                            if (tvCurrentLevel != null && currentLevel != null) {
-                                tvCurrentLevel.setText("Trình độ hiện tại: " + currentLevel);
+                            // Hiển thị address từ User
+                            if (user.getAddress() != null && !user.getAddress().isEmpty()) {
+                                // Có thể thêm TextView để hiển thị address
+                                android.util.Log.d("UpdateProfile", "User address: " + user.getAddress());
                             }
+
+                            android.util.Log.d("UpdateProfile", "User loaded: " + user.toString());
 
                             // Load additional study info
                             loadStudyStats();
@@ -192,23 +194,38 @@ public class UpdateProfileActivity extends AppCompatActivity {
             return;
         }
 
-        // Update user data in Firestore
+        // Cập nhật dữ liệu user sử dụng class User với đầy đủ các trường
         if (userId != null) {
-            java.util.Map<String, Object> updates = new java.util.HashMap<>();
-            updates.put("name", fullName);
-            updates.put("phone", phone);
-            updates.put("bio", bio);
-            updates.put("updatedAt", com.google.firebase.Timestamp.now());
-
+            // Load user hiện tại trước, sau đó update
             db.collection("users").document(userId)
-                    .update(updates)
-                    .addOnSuccessListener(aVoid -> {
-                        Toast.makeText(this, "Cập nhật thông tin thành công", Toast.LENGTH_SHORT).show();
-                        finish();
-                    })
-                    .addOnFailureListener(e -> {
-                        Toast.makeText(this, "Lỗi cập nhật: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                    });
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        User user = User.fromMap(documentSnapshot.getData());
+
+                        // Cập nhật thông tin mới
+                        user.setFullName(fullName);
+                        // Có thể thêm logic để update address từ UI nếu cần
+                        // user.setAddress(address);
+
+                        // Lưu user đã cập nhật vào Firestore
+                        db.collection("users").document(userId)
+                                .set(user.toMap())
+                                .addOnSuccessListener(aVoid -> {
+                                    android.util.Log.d("UpdateProfile", "User updated successfully: " + user.toString());
+                                    Toast.makeText(this, "Cập nhật thông tin thành công", Toast.LENGTH_SHORT).show();
+                                    finish();
+                                })
+                                .addOnFailureListener(e -> {
+                                    android.util.Log.e("UpdateProfile", "Error updating user", e);
+                                    Toast.makeText(this, "Lỗi cập nhật: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                });
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    android.util.Log.e("UpdateProfile", "Error loading user for update", e);
+                    Toast.makeText(this, "Lỗi tải thông tin: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
         }
     }
 

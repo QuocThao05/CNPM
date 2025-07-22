@@ -1,106 +1,111 @@
 package com.vantinh.tienganh;
 
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Enrollment {
     private String id;
-    private String studentId;
-    private String studentName;
-    private String studentEmail;
-    private String courseId;
+    private String courseID;
     private String courseName;
-    private String teacherId;
     private Date enrollmentDate;
-    private String status; // PENDING, APPROVED, REJECTED
-    private String message; // Tin nhắn từ giáo viên
-    private Date approvedDate;
-    private double progress; // Tiến độ học (0-100%)
+    private String studentEmail;
+    private String studentID;
+    private String fullName;
 
+    // Constructor mặc định cho Firebase
     public Enrollment() {
-        // Required empty constructor for Firebase
-    }
-
-    public Enrollment(String studentId, String studentName, String studentEmail,
-                     String courseId, String courseName, String teacherId) {
-        this.studentId = studentId;
-        this.studentName = studentName;
-        this.studentEmail = studentEmail;
-        this.courseId = courseId;
-        this.courseName = courseName;
-        this.teacherId = teacherId;
         this.enrollmentDate = new Date();
-        this.status = "PENDING";
-        this.progress = 0.0;
     }
 
-    // Constructor for simple enrollment (used in CourseRequestManagementActivity)
-    public Enrollment(String studentId, String courseId, Date enrollmentDate, double progress) {
-        this.studentId = studentId;
-        this.courseId = courseId;
-        this.enrollmentDate = enrollmentDate;
-        this.progress = progress;
-        this.status = "APPROVED";
+    // Constructor đầy đủ (bỏ teacherName)
+    public Enrollment(String courseID, String courseName, String studentEmail,
+                     String studentID, String fullName) {
+        this.courseID = courseID;
+        this.courseName = courseName;
+        this.studentEmail = studentEmail;
+        this.studentID = studentID;
+        this.fullName = fullName;
+        this.enrollmentDate = new Date();
     }
 
-    // Getters and Setters
+    // Constructor với enrollmentDate
+    public Enrollment(String courseID, String courseName, Date enrollmentDate,
+                     String studentEmail, String studentID, String fullName) {
+        this.courseID = courseID;
+        this.courseName = courseName;
+        this.enrollmentDate = enrollmentDate != null ? enrollmentDate : new Date();
+        this.studentEmail = studentEmail;
+        this.studentID = studentID;
+        this.fullName = fullName;
+    }
+
+    // Getters và Setters
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
 
-    public String getStudentId() { return studentId; }
-    public void setStudentId(String studentId) { this.studentId = studentId; }
-
-    public String getStudentName() {
-        // Xử lý trường hợp studentName bị null, thử lấy từ trường name
-        if (studentName != null && !studentName.isEmpty()) {
-            return studentName;
-        }
-        // Fallback: nếu có trường name (từ collection users)
-        return name != null ? name : "Học viên";
-    }
-
-    public void setStudentName(String studentName) {
-        this.studentName = studentName;
-    }
-
-    // Thêm trường name để tương thích với collection users
-    private String name;
-
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
-
-    public String getStudentEmail() { return studentEmail; }
-    public void setStudentEmail(String studentEmail) { this.studentEmail = studentEmail; }
-
-    public String getCourseId() { return courseId; }
-    public void setCourseId(String courseId) { this.courseId = courseId; }
+    public String getCourseID() { return courseID; }
+    public void setCourseID(String courseID) { this.courseID = courseID; }
 
     public String getCourseName() { return courseName; }
     public void setCourseName(String courseName) { this.courseName = courseName; }
 
-    public String getTeacherId() { return teacherId; }
-    public void setTeacherId(String teacherId) { this.teacherId = teacherId; }
-
     public Date getEnrollmentDate() { return enrollmentDate; }
     public void setEnrollmentDate(Date enrollmentDate) { this.enrollmentDate = enrollmentDate; }
 
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
+    public String getStudentEmail() { return studentEmail; }
+    public void setStudentEmail(String studentEmail) { this.studentEmail = studentEmail; }
 
-    public String getMessage() { return message; }
-    public void setMessage(String message) { this.message = message; }
+    public String getStudentID() { return studentID; }
+    public void setStudentID(String studentID) { this.studentID = studentID; }
 
-    public Date getApprovedDate() { return approvedDate; }
-    public void setApprovedDate(Date approvedDate) { this.approvedDate = approvedDate; }
+    public String getFullName() { return fullName; }
+    public void setFullName(String fullName) { this.fullName = fullName; }
 
-    public double getProgress() { return progress; }
-    public void setProgress(double progress) { this.progress = progress; }
+    public String getStudentId() { return studentID; }
+    public void setStudentId(String studentId) { this.studentID = studentId; }
 
-    public String getStatusDisplayName() {
-        switch (status) {
-            case "PENDING": return "Đang chờ duyệt";
-            case "APPROVED": return "Đã duyệt";
-            case "REJECTED": return "Bị từ chối";
-            default: return "Không xác định";
+    // Chuyển đổi thành Map cho Firebase
+    public Map<String, Object> toMap() {
+        Map<String, Object> map = new HashMap<>();
+        map.put("courseID", courseID);
+        map.put("courseName", courseName);
+        map.put("enrollmentDate", enrollmentDate);
+        map.put("studentEmail", studentEmail);
+        map.put("studentID", studentID);
+        map.put("fullName", fullName);
+        return map;
+    }
+
+    // Tạo Enrollment từ Map
+    public static Enrollment fromMap(Map<String, Object> map) {
+        Enrollment enrollment = new Enrollment();
+        enrollment.setId((String) map.get("id"));
+        enrollment.setCourseID((String) map.get("courseID"));
+        enrollment.setCourseName((String) map.get("courseName"));
+        enrollment.setStudentEmail((String) map.get("studentEmail"));
+        enrollment.setStudentID((String) map.get("studentID"));
+        enrollment.setFullName((String) map.get("fullName"));
+
+        if (map.get("enrollmentDate") instanceof Date) {
+            enrollment.setEnrollmentDate((Date) map.get("enrollmentDate"));
+        } else if (map.get("enrollmentDate") instanceof com.google.firebase.Timestamp) {
+            enrollment.setEnrollmentDate(((com.google.firebase.Timestamp) map.get("enrollmentDate")).toDate());
         }
+
+        return enrollment;
+    }
+
+    @Override
+    public String toString() {
+        return "Enrollment{" +
+                "id='" + id + '\'' +
+                ", courseID='" + courseID + '\'' +
+                ", courseName='" + courseName + '\'' +
+                ", enrollmentDate=" + enrollmentDate +
+                ", studentEmail='" + studentEmail + '\'' +
+                ", studentID='" + studentID + '\'' +
+                ", fullName='" + fullName + '\'' +
+                '}';
     }
 }

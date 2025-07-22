@@ -3,6 +3,7 @@ package com.vantinh.tienganh;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
@@ -19,6 +20,8 @@ public class CourseAdapter extends RecyclerView.Adapter<CourseAdapter.CourseView
 
     public interface OnCourseClickListener {
         void onCourseClick(Course course);
+        void onManageLessons(Course course);
+        void onEditCourse(Course course);
     }
 
     public CourseAdapter(List<Course> courseList, OnCourseClickListener listener) {
@@ -56,6 +59,8 @@ public class CourseAdapter extends RecyclerView.Adapter<CourseAdapter.CourseView
         private TextView tvEnrolledStudents;
         private TextView tvCourseRating;
         private TextView tvCreatedDate;
+        private Button btnManageLessons;
+        private Button btnEditCourse;
 
         public CourseViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -69,6 +74,8 @@ public class CourseAdapter extends RecyclerView.Adapter<CourseAdapter.CourseView
             tvEnrolledStudents = itemView.findViewById(R.id.tv_enrolled_students);
             tvCourseRating = itemView.findViewById(R.id.tv_course_rating);
             tvCreatedDate = itemView.findViewById(R.id.tv_created_date);
+            btnManageLessons = itemView.findViewById(R.id.btn_manage_lessons);
+            btnEditCourse = itemView.findViewById(R.id.btn_edit_course);
         }
 
         public void bind(Course course) {
@@ -88,9 +95,22 @@ public class CourseAdapter extends RecyclerView.Adapter<CourseAdapter.CourseView
             // Set course image (placeholder for now)
             ivCourseImage.setImageResource(R.drawable.ic_course_default);
 
+            // Set up click listeners
             cardCourse.setOnClickListener(v -> {
                 if (listener != null) {
                     listener.onCourseClick(course);
+                }
+            });
+
+            btnManageLessons.setOnClickListener(v -> {
+                if (listener != null) {
+                    listener.onManageLessons(course);
+                }
+            });
+
+            btnEditCourse.setOnClickListener(v -> {
+                if (listener != null) {
+                    listener.onEditCourse(course);
                 }
             });
 

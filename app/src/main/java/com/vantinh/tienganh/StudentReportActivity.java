@@ -154,37 +154,24 @@ public class StudentReportActivity extends AppCompatActivity {
         progressBar.setVisibility(View.VISIBLE);
         String teacherId = mAuth.getCurrentUser().getUid();
 
-        // Load tất cả enrollments của giáo viên này
+        // Đơn giản hóa: Load tất cả enrollments và tạo report từ dữ liệu có sẵn
         db.collection("enrollments")
-                .whereEqualTo("teacherId", teacherId)
-                .whereEqualTo("status", "APPROVED")
                 .get()
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
                         studentReportList.clear();
 
-                        if (task.getResult().isEmpty()) {
-                            updateUI();
-                            progressBar.setVisibility(View.GONE);
-                            return;
-                        }
-
-                        final int totalEnrollments = task.getResult().size();
-                        final int[] processedCount = {0};
-
                         for (QueryDocumentSnapshot doc : task.getResult()) {
-                            Enrollment enrollment = doc.toObject(Enrollment.class);
+                            Enrollment enrollment = Enrollment.fromMap(doc.getData());
                             enrollment.setId(doc.getId());
 
-                            // Load thông tin chi tiết cho từng học viên
-                            loadStudentReportDetail(enrollment, () -> {
-                                processedCount[0]++;
-                                if (processedCount[0] == totalEnrollments) {
-                                    updateUI();
-                                    progressBar.setVisibility(View.GONE);
-                                }
-                            });
+                            // Tạo StudentReport từ Enrollment
+                            StudentReport report = createReportFromEnrollment(enrollment);
+                            studentReportList.add(report);
                         }
+
+                        updateUI();
+                        progressBar.setVisibility(View.GONE);
                     } else {
                         progressBar.setVisibility(View.GONE);
                         Toast.makeText(this, "Lỗi tải dữ liệu", Toast.LENGTH_SHORT).show();
@@ -192,81 +179,26 @@ public class StudentReportActivity extends AppCompatActivity {
                 });
     }
 
-    private void loadStudentReportDetail(Enrollment enrollment, Runnable onComplete) {
+    private StudentReport createReportFromEnrollment(Enrollment enrollment) {
         StudentReport report = new StudentReport();
-        report.setStudentId(enrollment.getStudentId());
-        report.setCourseId(enrollment.getCourseId());
+
+        // Sử dụng các method có sẵn trong class Enrollment mới
+        report.setStudentId(enrollment.getStudentID()); // Sử dụng getStudentID() thay vì getStudentId()
+        report.setStudentName(enrollment.getFullName()); // Sử dụng getFullName() thay vì getStudentName()
+        report.setStudentEmail(enrollment.getStudentEmail());
+        report.setCourseId(enrollment.getCourseID()); // Sử dụng getCourseID() thay vì getCourseId()
+        report.setCourseName(enrollment.getCourseName());
         report.setEnrollmentDate(enrollment.getEnrollmentDate());
 
-        // Load student info
-        db.collection("users").document(enrollment.getStudentId())
-                .get()
-                .addOnSuccessListener(studentDoc -> {
-                    if (studentDoc.exists()) {
-                        report.setStudentName(studentDoc.getString("name"));
-                        report.setStudentEmail(studentDoc.getString("email"));
-                    }
+        // Set default values cho các trường khác
+        report.setTotalQuizzes(0);
+        report.setCompletedQuizzes(0);
+        report.setAverageScore(0.0);
+        report.setProgress(0.0);
+        report.setStatus("NOT_STARTED");
+        report.setLastActivity(enrollment.getEnrollmentDate());
 
-                    // Load course info
-                    db.collection("courses").document(enrollment.getCourseId())
-                            .get()
-                            .addOnSuccessListener(courseDoc -> {
-                                if (courseDoc.exists()) {
-                                    report.setCourseName(courseDoc.getString("title"));
-                                }
-
-                                // Load quiz results and progress
-                                loadQuizResults(report, () -> {
-                                    // Filter based on current tab
-                                    if (shouldIncludeInCurrentTab(report)) {
-                                        studentReportList.add(report);
-                                    }
-                                    onComplete.run();
-                                });
-                            })
-                            .addOnFailureListener(e -> onComplete.run());
-                })
-                .addOnFailureListener(e -> onComplete.run());
-    }
-
-    private void loadQuizResults(StudentReport report, Runnable onComplete) {
-        // Load quiz results for this student and course
-        db.collection("quiz_results")
-                .whereEqualTo("studentId", report.getStudentId())
-                .whereEqualTo("courseId", report.getCourseId())
-                .get()
-                .addOnCompleteListener(task -> {
-                    if (task.isSuccessful()) {
-                        int totalQuizzes = task.getResult().size();
-                        int completedQuizzes = 0;
-                        double totalScore = 0;
-
-                        for (QueryDocumentSnapshot quizDoc : task.getResult()) {
-                            Double score = quizDoc.getDouble("score");
-                            if (score != null) {
-                                totalScore += score;
-                                completedQuizzes++;
-                            }
-                        }
-
-                        report.setTotalQuizzes(totalQuizzes);
-                        report.setCompletedQuizzes(completedQuizzes);
-                        report.setAverageScore(completedQuizzes > 0 ? totalScore / completedQuizzes : 0);
-
-                        // Calculate progress
-                        double progress = totalQuizzes > 0 ? (double) completedQuizzes / totalQuizzes * 100 : 0;
-                        report.setProgress(progress);
-
-                        if (progress >= 100) {
-                            report.setStatus("COMPLETED");
-                        } else if (progress > 0) {
-                            report.setStatus("IN_PROGRESS");
-                        } else {
-                            report.setStatus("NOT_STARTED");
-                        }
-                    }
-                    onComplete.run();
-                });
+        return report;
     }
 
     private boolean shouldIncludeInCurrentTab(StudentReport report) {
@@ -282,13 +214,43 @@ public class StudentReportActivity extends AppCompatActivity {
     }
 
     private void updateUI() {
-        if (studentReportList.isEmpty()) {
+        // Filter reports theo tab hiện tại
+        List<StudentReport> filteredReports = new ArrayList<>();
+        for (StudentReport report : studentReportList) {
+            if (shouldIncludeInCurrentTab(report)) {
+                filteredReports.add(report);
+            }
+        }
+
+        if (filteredReports.isEmpty()) {
             tvNoReports.setVisibility(View.VISIBLE);
             rvStudentReports.setVisibility(View.GONE);
         } else {
             tvNoReports.setVisibility(View.GONE);
             rvStudentReports.setVisibility(View.VISIBLE);
         }
+
+        // Update adapter với filtered list
+        studentReportAdapter = new StudentReportAdapter(filteredReports, new StudentReportAdapter.OnReportClickListener() {
+            @Override
+            public void onViewDetail(StudentReport report) {
+                Intent intent = new Intent(StudentReportActivity.this, StudentDetailReportActivity.class);
+                intent.putExtra("studentId", report.getStudentId());
+                intent.putExtra("studentName", report.getStudentName());
+                intent.putExtra("courseId", report.getCourseId());
+                intent.putExtra("courseName", report.getCourseName());
+                startActivity(intent);
+            }
+
+            @Override
+            public void onViewProgress(StudentReport report) {
+                Intent intent = new Intent(StudentReportActivity.this, StudentProgressDetailActivity.class);
+                intent.putExtra("studentId", report.getStudentId());
+                intent.putExtra("courseId", report.getCourseId());
+                startActivity(intent);
+            }
+        });
+        rvStudentReports.setAdapter(studentReportAdapter);
         studentReportAdapter.notifyDataSetChanged();
     }
 
