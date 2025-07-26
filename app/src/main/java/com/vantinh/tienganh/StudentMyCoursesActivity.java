@@ -158,11 +158,7 @@ public class StudentMyCoursesActivity extends AppCompatActivity implements Stude
                             enrolledCourse.setCourse(course);
                             enrolledCourse.setEnrollmentId(enrollmentId);
                             enrolledCourse.setEnrollmentDate(enrollmentDate);
-<<<<<<< HEAD
-                            enrolledCourse.setProgress(0); //
-=======
                             enrolledCourse.setProgress(0); // TODO: Calculate actual progress
->>>>>>> 542cd6292b68990ee1f3d7aca232549a251d4232
 
                             enrolledCourseList.add(enrolledCourse);
 
