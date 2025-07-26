@@ -189,10 +189,7 @@ public class StudentLessonLearningActivity extends AppCompatActivity {
     }
 
     private void setupLessonNavigation() {
-<<<<<<< HEAD
-=======
         // TODO: Implement lesson navigation logic
->>>>>>> 542cd6292b68990ee1f3d7aca232549a251d4232
         // For now, disable navigation buttons
         btnNextLesson.setEnabled(false);
         btnPreviousLesson.setEnabled(false);
@@ -204,10 +201,7 @@ public class StudentLessonLearningActivity extends AppCompatActivity {
             return;
         }
 
-<<<<<<< HEAD
-=======
         // TODO: Implement lesson completion tracking
->>>>>>> 542cd6292b68990ee1f3d7aca232549a251d4232
         Toast.makeText(this, "Đã đánh dấu hoàn thành bài học!", Toast.LENGTH_SHORT).show();
         btnMarkCompleted.setText("Đã hoàn thành");
         btnMarkCompleted.setEnabled(false);

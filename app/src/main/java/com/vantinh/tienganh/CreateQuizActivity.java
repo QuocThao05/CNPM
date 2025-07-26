@@ -15,6 +15,8 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.vantinh.tienganh.models.Quiz;
 import com.vantinh.tienganh.models.QuizQuestion;
+import com.vantinh.tienganh.models.TestQuestion;
+import com.vantinh.tienganh.models.SimpleTestQuestion;
 import com.vantinh.tienganh.utils.QuestionViewHelper;
 import java.util.ArrayList;
 import java.util.Date;
@@ -25,7 +27,7 @@ public class CreateQuizActivity extends AppCompatActivity implements QuestionVie
     private Toolbar toolbar;
     private EditText etQuizTitle;
     private TextView tvCourseName, tvQuestionCount;
-    private Button btnCreateQuiz, btnAddQuestion, btnRemoveQuestion;
+    private Button btnCreateQuiz, btnAddQuestion, btnRemoveQuestion, btnDebugCreate;
     private LinearLayout llQuestionsContainer;
     private String courseId, courseName;
     private FirebaseFirestore db;
@@ -55,6 +57,7 @@ public class CreateQuizActivity extends AppCompatActivity implements QuestionVie
         btnAddQuestion = findViewById(R.id.btn_add_question);
         btnRemoveQuestion = findViewById(R.id.btn_remove_question);
         llQuestionsContainer = findViewById(R.id.ll_questions_container);
+        btnDebugCreate = findViewById(R.id.btn_debug_create);
     }
 
     private void setupToolbar() {
@@ -102,6 +105,8 @@ public class CreateQuizActivity extends AppCompatActivity implements QuestionVie
             android.util.Log.d("CreateQuiz", "Remove clicked - Before: " + countBefore + ", After: " + countAfter);
             Toast.makeText(this, "Đã xóa câu hỏi cuối", Toast.LENGTH_SHORT).show();
         });
+
+        btnDebugCreate.setOnClickListener(v -> createDebugSampleData());
     }
 
     @Override
@@ -128,69 +133,104 @@ public class CreateQuizActivity extends AppCompatActivity implements QuestionVie
             return;
         }
 
-        String quizTitle = etQuizTitle.getText().toString().trim();
-        List<QuizQuestion> questions = new ArrayList<>();
+        // Debug: Bắt đầu quá trình tạo bài kiểm tra
+        android.util.Log.d("CreateQuiz", "=== BẮT ĐẦU TẠO BÁI KIỂM TRA ===");
+        android.util.Log.d("CreateQuiz", "Course ID: " + courseId);
+        android.util.Log.d("CreateQuiz", "Course Name: " + courseName);
 
-        // Create questions from dynamic views theo cấu trúc Firebase
+        List<SimpleTestQuestion> simpleTestQuestions = new ArrayList<>();
+
+        // Tạo từng câu hỏi theo cấu trúc mới chỉ với 3 trường
         List<QuestionViewHelper.QuestionViewData> questionViews = questionViewHelper.getQuestionViews();
+        android.util.Log.d("CreateQuiz", "Số câu hỏi cần tạo: " + questionViews.size());
+
         for (int i = 0; i < questionViews.size(); i++) {
             QuestionViewHelper.QuestionViewData questionData = questionViews.get(i);
 
-            // Lấy question (String)
+            // 1. Lấy question (String) - nội dung câu hỏi
             String questionText = questionData.etQuestion.getText().toString().trim();
             
-            // Lấy options (Array)
-            List<String> options = new ArrayList<>();
+            // 2. Lấy correctAnswer (Array) - 4 đáp án A,B,C,D
+            List<String> correctAnswerArray = new ArrayList<>();
             for (int j = 0; j < 4; j++) {
-                options.add(questionData.etOptions[j].getText().toString().trim());
+                String optionText = questionData.etOptions[j].getText().toString().trim();
+                correctAnswerArray.add(optionText);
+                android.util.Log.d("CreateQuiz", "  Option " + (char)('A' + j) + ": " + optionText);
             }
 
-            // Lấy correctAnswers (Number)
+            // 3. Lấy options (Number) - index của đáp án đúng (0-3)
             int correctAnswerIndex = getCorrectAnswerIndex(questionData);
             
-            // Tạo QuizQuestion với 3 trường dữ liệu Firebase
-            QuizQuestion question = new QuizQuestion();
-            question.setQuestion(questionText);        // String
-            question.setOptions(options);              // Array
-            question.setCorrectAnswers(correctAnswerIndex); // Number
-            
-            questions.add(question);
-            
-            // Debug log để kiểm tra dữ liệu Firebase format
-            android.util.Log.d("CreateQuiz", "Firebase Question " + (i+1) + ":");
-            android.util.Log.d("CreateQuiz", "  question: " + questionText);
-            android.util.Log.d("CreateQuiz", "  options: " + options.toString());
-            android.util.Log.d("CreateQuiz", "  correctAnswers: " + correctAnswerIndex);
+            // Tạo SimpleTestQuestion chỉ với 4 trường dữ liệu (thêm courseId)
+            SimpleTestQuestion simpleQuestion = new SimpleTestQuestion();
+            simpleQuestion.setCourseId(courseId);              // String - ID khóa học (MỚI)
+            simpleQuestion.setCorrectAnswer(correctAnswerArray);     // Array - 4 đáp án
+            simpleQuestion.setOptions(correctAnswerIndex);           // Number - index đáp án đúng
+            simpleQuestion.setQuestion(questionText);                // String - câu hỏi
+
+            simpleTestQuestions.add(simpleQuestion);
+
+            // Debug log chi tiết cho từng câu hỏi với courseId
+            android.util.Log.d("CreateQuiz", "--- QUESTION " + (i+1) + " DEBUG ---");
+            android.util.Log.d("CreateQuiz", "courseId (String): \"" + courseId + "\"");
+            android.util.Log.d("CreateQuiz", "question (String): \"" + questionText + "\"");
+            android.util.Log.d("CreateQuiz", "correctAnswer (Array): " + correctAnswerArray.toString());
+            android.util.Log.d("CreateQuiz", "options (Number): " + correctAnswerIndex);
+            android.util.Log.d("CreateQuiz", "Đáp án đúng là: " +
+                (correctAnswerIndex >= 0 && correctAnswerIndex < correctAnswerArray.size() ?
+                 correctAnswerArray.get(correctAnswerIndex) : "KHÔNG XÁC ĐỊNH"));
+            android.util.Log.d("CreateQuiz", "SimpleTestQuestion Object: " + simpleQuestion.toString());
         }
 
-        // Create quiz object với đầy đủ metadata
-        Quiz quiz = new Quiz();
-        quiz.setTitle(quizTitle);
-        quiz.setCourseId(courseId);
-        quiz.setCourseName(courseName);
-        quiz.setTeacherId(mAuth.getCurrentUser().getUid());
-        quiz.setQuestions(questions);
-        quiz.setCreatedAt(new Date());
-        quiz.setActive(true);
+        // Debug tổng kết trước khi lưu
+        android.util.Log.d("CreateQuiz", "=== TỔNG KẾT TRƯỚC KHI LƯU ===");
+        android.util.Log.d("CreateQuiz", "Tổng số câu hỏi: " + simpleTestQuestions.size());
+        android.util.Log.d("CreateQuiz", "Collection đích: test");
+        android.util.Log.d("CreateQuiz", "Cấu trúc mỗi document:");
+        android.util.Log.d("CreateQuiz", "  - correctAnswer: Array[4] (4 đáp án)");
+        android.util.Log.d("CreateQuiz", "  - options: Number (index đáp án đúng)");
+        android.util.Log.d("CreateQuiz", "  - question: String (câu hỏi)");
 
-        // Log toàn bộ quiz data để debug
-        android.util.Log.d("CreateQuiz", "Creating Quiz for Firebase:");
-        android.util.Log.d("CreateQuiz", "  title: " + quizTitle);
-        android.util.Log.d("CreateQuiz", "  courseId: " + courseId);
-        android.util.Log.d("CreateQuiz", "  courseName: " + courseName);
-        android.util.Log.d("CreateQuiz", "  questionsCount: " + questions.size());
+        // Lưu từng câu hỏi như một document riêng trong collection "test"
+        saveSimpleTestQuestionsToFirebase(simpleTestQuestions);
+    }
 
-        // Save to Firebase
-        saveQuizToFirebase(quiz);
+    private void createDebugSampleData() {
+        // Tạo dữ liệu mẫu để kiểm tra
+        android.util.Log.d("CreateQuiz", "=== TẠO DỮ LIỆU MẪU ===");
+        android.util.Log.d("CreateQuiz", "CourseId for sample data: " + courseId);
+
+        // Tạo một danh sách câu hỏi mẫu
+        List<SimpleTestQuestion> sampleQuestions = new ArrayList<>();
+
+        // Tạo 5 câu hỏi mẫu với đáp án ngẫu nhiên
+        for (int i = 1; i <= 5; i++) {
+            SimpleTestQuestion question = new SimpleTestQuestion();
+            question.setCourseId(courseId);  // Thêm courseId cho dữ liệu mẫu
+            question.setQuestion("Câu hỏi mẫu " + i + " - Khóa học: " + courseName);
+
+            List<String> answers = new ArrayList<>();
+            answers.add("Đáp án A - Câu hỏi " + i);
+            answers.add("Đáp án B - Câu hỏi " + i);
+            answers.add("Đáp án C - Câu hỏi " + i);
+            answers.add("Đáp án D - Câu hỏi " + i);
+            question.setCorrectAnswer(answers);
+
+            // Chọn ngẫu nhiên một đáp án đúng
+            int correctIndex = (int) (Math.random() * 4);
+            question.setOptions(correctIndex);
+
+            sampleQuestions.add(question);
+
+            android.util.Log.d("CreateQuiz", "Câu hỏi mẫu " + i + ": " + question.toString());
+        }
+
+        // Lưu vào Firebase
+        saveSimpleTestQuestionsToFirebase(sampleQuestions);
     }
 
     private boolean validateInput() {
-        String quizTitle = etQuizTitle.getText().toString().trim();
-        if (quizTitle.isEmpty()) {
-            etQuizTitle.setError("Vui lòng nhập tên bài kiểm tra");
-            return false;
-        }
-
+        // Bỏ validation tên bài kiểm tra vì không cần thiết với cấu trúc mới
         List<QuestionViewHelper.QuestionViewData> questionViews = questionViewHelper.getQuestionViews();
 
         for (int i = 0; i < questionViews.size(); i++) {
@@ -233,81 +273,152 @@ public class CreateQuizActivity extends AppCompatActivity implements QuestionVie
             return -1;
         }
 
-        // Lấy trực tiếp RadioButton từ RadioGroup thay vì từ questionView
+        // Phương pháp đơn giản: Kiểm tra trực tiếp từng RadioButton theo ID gốc
         RadioButton rbA = questionData.questionView.findViewById(R.id.rb_option_a);
         RadioButton rbB = questionData.questionView.findViewById(R.id.rb_option_b);
         RadioButton rbC = questionData.questionView.findViewById(R.id.rb_option_c);
         RadioButton rbD = questionData.questionView.findViewById(R.id.rb_option_d);
 
-        android.util.Log.d("CreateQuiz", "RadioButton IDs - A:" + (rbA != null ? rbA.getId() : "null") +
-                                        ", B:" + (rbB != null ? rbB.getId() : "null") +
-                                        ", C:" + (rbC != null ? rbC.getId() : "null") +
-                                        ", D:" + (rbD != null ? rbD.getId() : "null"));
+        android.util.Log.d("CreateQuiz", "RadioButton states - A:" + (rbA != null ? rbA.isChecked() : "null") +
+                                        ", B:" + (rbB != null ? rbB.isChecked() : "null") +
+                                        ", C:" + (rbC != null ? rbC.isChecked() : "null") +
+                                        ", D:" + (rbD != null ? rbD.isChecked() : "null"));
 
-        if (rbA != null && checkedId == rbA.getId()) {
-            android.util.Log.d("CreateQuiz", "Selected option A (index 0)");
+        if (rbA != null && rbA.isChecked()) {
+            android.util.Log.d("CreateQuiz", "Option A selected (index 0)");
             return 0;
         }
-        if (rbB != null && checkedId == rbB.getId()) {
-            android.util.Log.d("CreateQuiz", "Selected option B (index 1)");
+        if (rbB != null && rbB.isChecked()) {
+            android.util.Log.d("CreateQuiz", "Option B selected (index 1)");
             return 1;
         }
-        if (rbC != null && checkedId == rbC.getId()) {
-            android.util.Log.d("CreateQuiz", "Selected option C (index 2)");
+        if (rbC != null && rbC.isChecked()) {
+            android.util.Log.d("CreateQuiz", "Option C selected (index 2)");
             return 2;
         }
-        if (rbD != null && checkedId == rbD.getId()) {
-            android.util.Log.d("CreateQuiz", "Selected option D (index 3)");
+        if (rbD != null && rbD.isChecked()) {
+            android.util.Log.d("CreateQuiz", "Option D selected (index 3)");
             return 3;
         }
 
-        android.util.Log.e("CreateQuiz", "Could not find matching RadioButton for checkedId: " + checkedId);
+        // Nếu vẫn không tìm được, thử kiểm tra bằng ID được sinh ra động
+        android.util.Log.d("CreateQuiz", "Fallback: Checking by generated IDs");
+        for (int i = 0; i < radioGroup.getChildCount(); i++) {
+            View child = radioGroup.getChildAt(i);
+            if (child instanceof RadioButton) {
+                RadioButton rb = (RadioButton) child;
+                if (rb.isChecked()) {
+                    android.util.Log.d("CreateQuiz", "Found checked RadioButton at child position " + i);
+                    return i;
+                }
+            }
+        }
+
+        android.util.Log.e("CreateQuiz", "Could not determine correct answer index for checkedId: " + checkedId);
         return -1;
     }
 
-    private void saveQuizToFirebase(Quiz quiz) {
+    private void saveTestQuestionsToFirebase(List<TestQuestion> testQuestions) {
         btnCreateQuiz.setEnabled(false);
         btnCreateQuiz.setText("Đang tạo...");
 
-        android.util.Log.d("CreateQuiz", "Starting Firebase save...");
+        android.util.Log.d("CreateQuiz", "Starting Firebase save for test questions...");
 
-        db.collection("quizzes")
-                .add(quiz)
-                .addOnSuccessListener(documentReference -> {
-                    String documentId = documentReference.getId();
-                    android.util.Log.d("CreateQuiz", "Quiz saved successfully with ID: " + documentId);
+        // Lưu từng câu hỏi trong danh sách như một document riêng biệt
+        for (TestQuestion question : testQuestions) {
+            db.collection("test")  // Thay đổi từ "quizzes" sang "test"
+                    .add(question)
+                    .addOnSuccessListener(documentReference -> {
+                        String documentId = documentReference.getId();
+                        android.util.Log.d("CreateQuiz", "Test question saved successfully with ID: " + documentId);
 
-                    // Log Firebase structure để verify
-                    android.util.Log.d("CreateQuiz", "Firebase Document Structure:");
-                    android.util.Log.d("CreateQuiz", "Collection: quizzes");
-                    android.util.Log.d("CreateQuiz", "Document ID: " + documentId);
-                    android.util.Log.d("CreateQuiz", "Fields saved:");
-                    android.util.Log.d("CreateQuiz", "  - title: " + quiz.getTitle());
-                    android.util.Log.d("CreateQuiz", "  - courseId: " + quiz.getCourseId());
-                    android.util.Log.d("CreateQuiz", "  - courseName: " + quiz.getCourseName());
-                    android.util.Log.d("CreateQuiz", "  - teacherId: " + quiz.getTeacherId());
-                    android.util.Log.d("CreateQuiz", "  - questions: array with " + quiz.getQuestions().size() + " items");
-                    android.util.Log.d("CreateQuiz", "  - createdAt: " + quiz.getCreatedAt());
-                    android.util.Log.d("CreateQuiz", "  - active: " + quiz.isActive());
+                        // Log từng câu hỏi đã lưu
+                        android.util.Log.d("CreateQuiz", "Saved Test Question:");
+                        android.util.Log.d("CreateQuiz", "  ID: " + documentId);
+                        android.util.Log.d("CreateQuiz", "  courseId: " + question.getCourseId());
+                        android.util.Log.d("CreateQuiz", "  teacherId: " + question.getTeacherId());
+                        android.util.Log.d("CreateQuiz", "  correctAnswer: " + question.getCorrectAnswer());
+                        android.util.Log.d("CreateQuiz", "  options: " + question.getOptions());
+                        android.util.Log.d("CreateQuiz", "  question: " + question.getQuestion());
 
-                    // Log each question structure
-                    for (int i = 0; i < quiz.getQuestions().size(); i++) {
-                        QuizQuestion q = quiz.getQuestions().get(i);
-                        android.util.Log.d("CreateQuiz", "  Question " + (i+1) + " structure:");
-                        android.util.Log.d("CreateQuiz", "    question: \"" + q.getQuestion() + "\"");
-                        android.util.Log.d("CreateQuiz", "    options: " + q.getOptions().toString());
-                        android.util.Log.d("CreateQuiz", "    correctAnswers: " + q.getCorrectAnswers());
-                    }
+                        // Hiển thị thông báo thành công cho lần lưu cuối cùng
+                        if (question == testQuestions.get(testQuestions.size() - 1)) {
+                            Toast.makeText(this, "Tạo bài kiểm tra thành công!", Toast.LENGTH_SHORT).show();
+                            finish();
+                        }
+                    })
+                    .addOnFailureListener(e -> {
+                        android.util.Log.e("CreateQuiz", "Firebase save failed: " + e.getMessage(), e);
+                        Toast.makeText(this, "Lỗi khi tạo bài kiểm tra: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                        btnCreateQuiz.setEnabled(true);
+                        btnCreateQuiz.setText("Tạo bài kiểm tra");
+                    });
+        }
+    }
 
-                    Toast.makeText(this, "Tạo bài kiểm tra thành công!", Toast.LENGTH_SHORT).show();
-                    finish();
-                })
-                .addOnFailureListener(e -> {
-                    android.util.Log.e("CreateQuiz", "Firebase save failed: " + e.getMessage(), e);
-                    Toast.makeText(this, "Lỗi khi tạo bài kiểm tra: " + e.getMessage(), Toast.LENGTH_LONG).show();
-                    btnCreateQuiz.setEnabled(true);
-                    btnCreateQuiz.setText("Tạo bài kiểm tra");
-                });
+    private void saveSimpleTestQuestionsToFirebase(List<SimpleTestQuestion> simpleTestQuestions) {
+        btnCreateQuiz.setEnabled(false);
+        btnCreateQuiz.setText("Đang tạo...");
+
+        android.util.Log.d("CreateQuiz", "Starting Firebase save for simple test questions...");
+
+        // Lưu từng câu hỏi trong danh sách như một document riêng biệt
+        for (SimpleTestQuestion question : simpleTestQuestions) {
+            db.collection("test")  // Thay đổi từ "quizzes" sang "test"
+                    .add(question)
+                    .addOnSuccessListener(documentReference -> {
+                        String documentId = documentReference.getId();
+                        android.util.Log.d("CreateQuiz", "Simple test question saved successfully with ID: " + documentId);
+
+                        // Log từng câu hỏi đã lưu
+                        android.util.Log.d("CreateQuiz", "Saved Simple Test Question:");
+                        android.util.Log.d("CreateQuiz", "  ID: " + documentId);
+                        android.util.Log.d("CreateQuiz", "  correctAnswer: " + question.getCorrectAnswer());
+                        android.util.Log.d("CreateQuiz", "  options: " + question.getOptions());
+                        android.util.Log.d("CreateQuiz", "  question: " + question.getQuestion());
+
+                        // Hiển thị thông báo thành công cho lần lưu cuối cùng
+                        if (question == simpleTestQuestions.get(simpleTestQuestions.size() - 1)) {
+                            Toast.makeText(this, "Tạo bài kiểm tra thành công!", Toast.LENGTH_SHORT).show();
+                            finish();
+                        }
+                    })
+                    .addOnFailureListener(e -> {
+                        android.util.Log.e("CreateQuiz", "Firebase save failed: " + e.getMessage(), e);
+                        Toast.makeText(this, "Lỗi khi tạo bài kiểm tra: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                        btnCreateQuiz.setEnabled(true);
+                        btnCreateQuiz.setText("Tạo bài kiểm tra");
+                    });
+        }
+    }
+
+    private void saveQuizQuestionsToFirebase(List<QuizQuestion> quizQuestions) {
+        btnCreateQuiz.setEnabled(false);
+        btnCreateQuiz.setText("Đang tạo...");
+
+        android.util.Log.d("CreateQuiz", "Starting Firebase save for quiz questions (old structure)...");
+
+        // Lưu từng câu hỏi trong danh sách như một document riêng biệt
+        for (QuizQuestion question : quizQuestions) {
+            db.collection("quizzes")  // Lưu vào collection "quizzes" với cấu trúc cũ
+                    .add(question)
+                    .addOnSuccessListener(documentReference -> {
+                        String documentId = documentReference.getId();
+                        android.util.Log.d("CreateQuiz", "Quiz question (old structure) saved successfully with ID: " + documentId);
+
+                        // Hiển thị thông báo thành công cho lần lưu cuối cùng
+                        if (question == quizQuestions.get(quizQuestions.size() - 1)) {
+                            Toast.makeText(this, "Tạo bài kiểm tra thành công!", Toast.LENGTH_SHORT).show();
+                            finish();
+                        }
+                    })
+                    .addOnFailureListener(e -> {
+                        android.util.Log.e("CreateQuiz", "Firebase save failed: " + e.getMessage(), e);
+                        Toast.makeText(this, "Lỗi khi tạo bài kiểm tra: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                        btnCreateQuiz.setEnabled(true);
+                        btnCreateQuiz.setText("Tạo bài kiểm tra");
+                    });
+        }
     }
 
     @Override

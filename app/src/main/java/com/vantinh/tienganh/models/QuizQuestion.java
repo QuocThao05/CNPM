@@ -3,21 +3,31 @@ package com.vantinh.tienganh.models;
 import java.util.List;
 
 public class QuizQuestion {
-    private String question;
-    private List<String> options;
-    private int correctAnswers;
+    private String title;           // Tên bài kiểm tra (trường mới)
+    private String question;        // Nội dung câu hỏi
+    private List<String> options;   // Các lựa chọn A, B, C, D
+    private int correctAnswer;      // Chỉ số đáp án đúng (0-3)
 
     public QuizQuestion() {
         // Empty constructor required for Firestore
     }
 
-    public QuizQuestion(String question, List<String> options, int correctAnswers) {
+    public QuizQuestion(String title, String question, List<String> options, int correctAnswer) {
+        this.title = title;
         this.question = question;
         this.options = options;
-        this.correctAnswers = correctAnswers;
+        this.correctAnswer = correctAnswer;
     }
 
     // Getters and Setters
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
     public String getQuestion() {
         return question;
     }
@@ -34,28 +44,28 @@ public class QuizQuestion {
         this.options = options;
     }
 
+    public int getCorrectAnswer() {
+        return correctAnswer;
+    }
+
+    public void setCorrectAnswer(int correctAnswer) {
+        this.correctAnswer = correctAnswer;
+    }
+
+    // Backward compatibility methods
     public int getCorrectAnswers() {
-        return correctAnswers;
+        return correctAnswer;
     }
 
     public void setCorrectAnswers(int correctAnswers) {
-        this.correctAnswers = correctAnswers;
+        this.correctAnswer = correctAnswers;
     }
 
-    // Backward compatibility methods (để không bị lỗi với code cũ)
     public String getQuestionText() {
         return question;
     }
 
     public void setQuestionText(String questionText) {
         this.question = questionText;
-    }
-
-    public int getCorrectAnswerIndex() {
-        return correctAnswers;
-    }
-
-    public void setCorrectAnswerIndex(int correctAnswerIndex) {
-        this.correctAnswers = correctAnswerIndex;
     }
 }

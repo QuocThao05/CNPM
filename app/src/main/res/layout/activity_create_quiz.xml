@@ -47,17 +47,19 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Thông tin bài kiểm tra"
+                        android:text="Thông tin khóa học"
                         android:textSize="18sp"
                         android:textStyle="bold"
                         android:textColor="@android:color/black"
                         android:layout_marginBottom="16dp" />
 
+                    <!-- Ẩn trường tên bài kiểm tra vì không cần thiết với cấu trúc mới -->
                     <com.google.android.material.textfield.TextInputLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="16dp"
-                        android:hint="Tên bài kiểm tra">
+                        android:hint="Tên bài kiểm tra"
+                        android:visibility="gone">
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/et_quiz_title"
@@ -168,6 +170,18 @@
                 android:textColor="@android:color/white"
                 android:textSize="16sp"
                 android:layout_marginTop="16dp"
+                android:padding="16dp" />
+
+            <!-- Debug Button -->
+            <Button
+                android:id="@+id/btn_debug_create"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="🔧 DEBUG: Tạo dữ liệu mẫu và lưu"
+                android:backgroundTint="@android:color/holo_orange_dark"
+                android:textColor="@android:color/white"
+                android:textSize="14sp"
+                android:layout_marginTop="8dp"
                 android:padding="16dp" />
 
         </LinearLayout>

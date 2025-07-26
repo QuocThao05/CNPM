@@ -105,38 +105,13 @@ public class QuestionViewHelper {
     }
 
     private void setupRadioButtonToggle(RadioGroup radioGroup, RadioButton radioButton, String optionName) {
-        android.util.Log.d("QuestionViewHelper", "Setting up listener for option " + optionName);
+        android.util.Log.d("QuestionViewHelper", "Setting up basic listener for option " + optionName);
 
-        // Sử dụng OnCheckedChangeListener thay vì OnClickListener để tránh xung đột
+        // Loại bỏ hoàn toàn logic toggle phức tạp - chỉ để RadioGroup tự quản lý
+        // Không cần OnClickListener custom vì RadioButton có sẵn behavior đúng
         radioButton.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (isChecked) {
-                android.util.Log.d("QuestionViewHelper", "Option " + optionName + " was checked");
-                // Lưu trạng thái này vào tag
-                radioButton.setTag("selected");
-            }
-        });
-
-        // Sử dụng OnClickListener để handle toggle logic
-        radioButton.setOnClickListener(v -> {
-            android.util.Log.d("QuestionViewHelper", "Option " + optionName + " clicked");
-
-            // Kiểm tra trạng thái trước đó
-            String previousState = (String) radioButton.getTag();
-            boolean wasAlreadySelected = "selected".equals(previousState);
-
-            android.util.Log.d("QuestionViewHelper", "Was already selected: " + wasAlreadySelected);
-
-            if (wasAlreadySelected) {
-                // Nếu đã được chọn, hủy chọn tất cả
-                android.util.Log.d("QuestionViewHelper", "Clearing selection for " + optionName);
-                radioGroup.clearCheck();
-                clearAllTags(radioGroup);
-            } else {
-                // Nếu chưa được chọn, clear tags của buttons khác và set tag cho button này
-                android.util.Log.d("QuestionViewHelper", "Selecting " + optionName);
-                clearAllTags(radioGroup);
-                radioButton.setTag("selected");
-                // RadioGroup sẽ tự động handle việc uncheck các button khác
+                android.util.Log.d("QuestionViewHelper", "Option " + optionName + " is now selected");
             }
         });
     }

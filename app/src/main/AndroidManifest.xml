@@ -48,6 +48,10 @@
             android:name=".StudentCourseSearchActivity"
             android:theme="@style/Theme.Final.NoActionBar" />
 
+        <!-- Edit Test Questions Activity -->
+        <activity android:name=".EditTestQuestionsActivity" />
+        <activity android:name=".EditSingleTestQuestionActivity" />
+
         <activity
             android:name=".CourseRequestManagementActivity"
             android:label="Quản lý yêu cầu khóa học"
@@ -59,7 +63,7 @@
         <activity android:name=".StudentCourseDetailActivity" />
         <activity android:name=".StudentLessonLearningActivity" />
 
-<<<<<<< HEAD
+
         <!-- Quiz Management Activities -->
         <activity
             android:name=".SelectCourseForQuizActivity"
@@ -70,8 +74,7 @@
             android:label="Tạo bài kiểm tra"
             android:parentActivityName=".SelectCourseForQuizActivity" />
 
-=======
->>>>>>> 542cd6292b68990ee1f3d7aca232549a251d4232
+
         <!-- Other Activities -->
         <activity android:name=".CourseManagementActivity" />
         <activity android:name=".LessonManagementActivity" />

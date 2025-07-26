@@ -24,7 +24,7 @@ public class EditCourseActivity extends AppCompatActivity {
 
     private EditText etCourseTitle, etCourseDescription, etCourseDuration;
     private Spinner spinnerLevel, spinnerCategory;
-    private Button btnUpdateCourse, btnDeleteCourse, btnManageLessons, btnViewStudents;
+    private Button btnUpdateCourse, btnDeleteCourse, btnManageLessons, btnViewStudents, btnEditTestQuestions;
     private ProgressBar progressBar;
     private BottomNavigationView bottomNavigation;
     private Toolbar toolbar;
@@ -74,6 +74,7 @@ public class EditCourseActivity extends AppCompatActivity {
         btnDeleteCourse = findViewById(R.id.btn_delete_course);
         btnManageLessons = findViewById(R.id.btn_manage_lessons);
         btnViewStudents = findViewById(R.id.btn_view_students);
+        btnEditTestQuestions = findViewById(R.id.btn_edit_test_questions); // Thêm nút mới
         progressBar = findViewById(R.id.progress_bar);
     }
 
@@ -132,6 +133,12 @@ public class EditCourseActivity extends AppCompatActivity {
         });
         btnViewStudents.setOnClickListener(v -> {
             Intent intent = new Intent(this, CourseStudentsActivity.class);
+            intent.putExtra("courseId", courseId);
+            intent.putExtra("courseTitle", currentCourse != null ? currentCourse.getTitle() : "");
+            startActivity(intent);
+        });
+        btnEditTestQuestions.setOnClickListener(v -> {
+            Intent intent = new Intent(this, EditTestQuestionsActivity.class);
             intent.putExtra("courseId", courseId);
             intent.putExtra("courseTitle", currentCourse != null ? currentCourse.getTitle() : "");
             startActivity(intent);
