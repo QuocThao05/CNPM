@@ -19,7 +19,11 @@ public class TeacherDashboardActivity extends AppCompatActivity {
 
     private Toolbar toolbar;
     private TextView tvWelcome, tvCoursesCount, tvStudentsCount, tvPendingRequestsCount;
+<<<<<<< HEAD
     private Button btnManageCourses, btnViewRequests, btnCreateQuiz, btnCreateCourse;
+=======
+    private Button btnManageCourses, btnViewRequests, btnViewStudents, btnCreateCourse;
+>>>>>>> 542cd6292b68990ee1f3d7aca232549a251d4232
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
     private RealtimeManager realtimeManager;
@@ -46,7 +50,11 @@ public class TeacherDashboardActivity extends AppCompatActivity {
 
         btnManageCourses = findViewById(R.id.btn_manage_courses);
         btnViewRequests = findViewById(R.id.btn_view_requests);
+<<<<<<< HEAD
         btnCreateQuiz = findViewById(R.id.btn_create_quiz);
+=======
+        btnViewStudents = findViewById(R.id.btn_view_students);
+>>>>>>> 542cd6292b68990ee1f3d7aca232549a251d4232
         btnCreateCourse = findViewById(R.id.btn_create_course);
     }
 
@@ -73,8 +81,13 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             startActivity(new Intent(this, CourseRequestManagementActivity.class));
         });
 
+<<<<<<< HEAD
         btnCreateQuiz.setOnClickListener(v -> {
             startActivity(new Intent(this, SelectCourseForQuizActivity.class));
+=======
+        btnViewStudents.setOnClickListener(v -> {
+            startActivity(new Intent(this, EnrollmentManagementActivity.class));
+>>>>>>> 542cd6292b68990ee1f3d7aca232549a251d4232
         });
 
         btnCreateCourse.setOnClickListener(v -> {

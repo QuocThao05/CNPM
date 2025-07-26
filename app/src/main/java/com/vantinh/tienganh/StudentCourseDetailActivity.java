@@ -144,6 +144,10 @@ public class StudentCourseDetailActivity extends AppCompatActivity {
                 int totalLessons = queryDocumentSnapshots.size();
                 tvTotalLessons.setText("Tổng số bài: " + totalLessons);
 
+<<<<<<< HEAD
+=======
+                // TODO: Load completed lessons count
+>>>>>>> 542cd6292b68990ee1f3d7aca232549a251d4232
                 int completedLessons = 0; // Placeholder
                 tvCompletedLessons.setText("Đã học: " + completedLessons);
 

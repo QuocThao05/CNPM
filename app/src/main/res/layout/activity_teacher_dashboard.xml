@@ -224,12 +224,21 @@
                             android:layout_marginEnd="8dp" />
 
                         <Button
+<<<<<<< HEAD
                             android:id="@+id/btn_create_quiz"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:text="Tạo bài kiểm tra"
                             android:backgroundTint="@android:color/holo_purple"
+=======
+                            android:id="@+id/btn_view_students"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Xem học viên"
+                            android:backgroundTint="@android:color/holo_green_dark"
+>>>>>>> 542cd6292b68990ee1f3d7aca232549a251d4232
                             android:textColor="@android:color/white"
                             android:layout_marginStart="8dp" />
 
