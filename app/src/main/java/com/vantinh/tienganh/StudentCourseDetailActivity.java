@@ -135,6 +135,12 @@ public class StudentCourseDetailActivity extends AppCompatActivity {
     }
 
     private void loadProgressData() {
+        if (mAuth.getCurrentUser() == null) {
+            return;
+        }
+
+        String studentId = mAuth.getCurrentUser().getUid();
+
         // Load lesson count
         db.collection("lessons")
             .whereEqualTo("courseId", courseId)
@@ -144,20 +150,54 @@ public class StudentCourseDetailActivity extends AppCompatActivity {
                 int totalLessons = queryDocumentSnapshots.size();
                 tvTotalLessons.setText("Tổng số bài: " + totalLessons);
 
-                // TODO: Load completed lessons count
-                int completedLessons = 0; // Placeholder
-                tvCompletedLessons.setText("Đã học: " + completedLessons);
-
-                // Calculate progress
-                int progress = totalLessons > 0 ? (completedLessons * 100) / totalLessons : 0;
-                progressBarCompletion.setProgress(progress);
-                tvProgressPercentage.setText(progress + "% hoàn thành");
+                // Load completed lessons count
+                loadCompletedLessonsCount(studentId, totalLessons);
             })
             .addOnFailureListener(e -> {
                 android.util.Log.e("StudentCourseDetail", "Error loading lessons", e);
                 tvTotalLessons.setText("Tổng số bài: N/A");
                 tvCompletedLessons.setText("Đã học: N/A");
+                tvProgressPercentage.setText("0% hoàn thành");
+                progressBarCompletion.setProgress(0);
             });
+    }
+
+    private void loadCompletedLessonsCount(String studentId, int totalLessons) {
+        db.collection("lesson_progress")
+                .whereEqualTo("studentId", studentId)
+                .whereEqualTo("courseId", courseId)
+                .whereEqualTo("isCompleted", true)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    int completedLessons = queryDocumentSnapshots.size();
+
+                    // Update UI with detailed progress information
+                    tvCompletedLessons.setText("Đã học: " + completedLessons);
+
+                    // Calculate progress percentage
+                    int progress = totalLessons > 0 ? (completedLessons * 100) / totalLessons : 0;
+                    progressBarCompletion.setProgress(progress);
+
+                    // Enhanced progress display with fraction and percentage
+                    String progressText = completedLessons + "/" + totalLessons + " bài học (" + progress + "% hoàn thành)";
+                    tvProgressPercentage.setText(progressText);
+
+                    // Log for debugging
+                    android.util.Log.d("StudentCourseDetail", "Progress updated: " + completedLessons + "/" + totalLessons + " = " + progress + "%");
+
+                    // Show completion status message
+                    if (completedLessons == totalLessons && totalLessons > 0) {
+                        Toast.makeText(this, "🎉 Chúc mừng! Bạn đã hoàn thành toàn bộ khóa học!", Toast.LENGTH_LONG).show();
+                    } else if (completedLessons > 0) {
+                        Toast.makeText(this, "Tiến độ: " + progressText, Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    android.util.Log.e("StudentCourseDetail", "Error loading completed lessons", e);
+                    tvCompletedLessons.setText("Đã học: 0");
+                    tvProgressPercentage.setText("0/" + totalLessons + " bài học (0% hoàn thành)");
+                    progressBarCompletion.setProgress(0);
+                });
     }
 
     @Override
@@ -167,5 +207,19 @@ public class StudentCourseDetailActivity extends AppCompatActivity {
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Refresh progress data when returning from lesson to show updated progress
+        if (currentCourse != null) {
+            loadProgressData();
+        }
+    }
+
+    // Add method to manually refresh progress (can be called from other activities)
+    public void refreshProgressData() {
+        loadProgressData();
     }
 }

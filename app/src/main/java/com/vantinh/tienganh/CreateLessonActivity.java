@@ -222,7 +222,7 @@ public class CreateLessonActivity extends AppCompatActivity {
         lessonData.put("estimatedTime", estimatedTime);
         lessonData.put("createdAt", new Date());
         lessonData.put("updatedAt", new Date());
-        lessonData.put("isPublished", false);
+        lessonData.put("isPublished", true); // Changed from false to true - auto publish lessons
 
         // Add grammar-specific data if this is a Grammar lesson
         if ("Grammar".equalsIgnoreCase(courseCategory)) {

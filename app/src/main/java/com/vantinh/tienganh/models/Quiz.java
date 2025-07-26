@@ -17,7 +17,7 @@ public class Quiz {
         // Empty constructor required for Firestore
     }
 
-    public Quiz(String title, String courseId, String courseName, String teacherId,
+    public Quiz(String title, String courseId, String courseName, String teacherId, 
                 List<QuizQuestion> questions, Date createdAt, boolean active) {
         this.title = title;
         this.courseId = courseId;

@@ -38,9 +38,7 @@ public class LoginActivity extends AppCompatActivity {
         initViews();
         setupClickListeners();
 
-        // Pre-fill test account for easier testing
-        etEmail.setText("quocthao@gmail.com");
-        etPassword.setText("123456");
+        // Removed pre-fill test account for production use
     }
 
     private void initViews() {

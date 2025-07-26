@@ -93,46 +93,43 @@ public class StudentCourseLessonsActivity extends AppCompatActivity implements S
         android.util.Log.d("StudentCourseLessons", "CourseId: " + courseId);
         android.util.Log.d("StudentCourseLessons", "CourseTitle: " + courseTitle);
 
-        // Simplified approach - load lessons directly first
+        // Load lessons with proper isPublished filter (now that we fixed lesson creation)
         db.collection("lessons")
             .whereEqualTo("courseId", courseId)
+            .whereEqualTo("isPublished", true)
             .get()
             .addOnSuccessListener(queryDocumentSnapshots -> {
                 lessonList.clear();
 
                 android.util.Log.d("StudentCourseLessons", "=== FIREBASE SUCCESS ===");
-                android.util.Log.d("StudentCourseLessons", "Total documents found: " + queryDocumentSnapshots.size());
+                android.util.Log.d("StudentCourseLessons", "Total published lessons found: " + queryDocumentSnapshots.size());
 
-                int publishedCount = 0;
                 for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
-                    android.util.Log.d("StudentCourseLessons", "Document ID: " + document.getId());
-
-                    // Check all fields in document
-                    android.util.Log.d("StudentCourseLessons", "Document data: " + document.getData());
-
                     Lesson lesson = document.toObject(Lesson.class);
                     lesson.setId(document.getId());
 
-                    android.util.Log.d("StudentCourseLessons", "Lesson: " + lesson.getTitle() +
-                        ", Published: " + lesson.isPublished() +
-                        ", Order: " + lesson.getOrder());
+                    // Set all lessons as accessible for now
+                    lesson.setAccessible(true);
+                    lesson.setLocked(false);
+                    lesson.setCompleted(false);
 
-                    // Add all lessons for now (ignore published status for debugging)
                     lessonList.add(lesson);
 
-                    if (lesson.isPublished()) {
-                        publishedCount++;
-                    }
+                    android.util.Log.d("StudentCourseLessons", "Added lesson: " + lesson.getTitle() + " (Order: " + lesson.getOrder() + ")");
                 }
-
-                android.util.Log.d("StudentCourseLessons", "Published lessons: " + publishedCount);
-                android.util.Log.d("StudentCourseLessons", "Total lessons added: " + lessonList.size());
 
                 // Sort lessons by order
                 lessonList.sort((l1, l2) -> Integer.compare(l1.getOrder(), l2.getOrder()));
 
-                // Show lessons immediately for debugging
+                android.util.Log.d("StudentCourseLessons", "Sorted lessons, total: " + lessonList.size());
+
+                // Show lessons immediately
                 showLessonsDirectly();
+
+                // Then load progress in background
+                if (mAuth.getCurrentUser() != null) {
+                    loadLessonProgressStatus();
+                }
             })
             .addOnFailureListener(e -> {
                 android.util.Log.e("StudentCourseLessons", "=== FIREBASE ERROR ===", e);
@@ -142,6 +139,61 @@ public class StudentCourseLessonsActivity extends AppCompatActivity implements S
             });
     }
 
+    private void loadLessonProgressStatus() {
+        if (mAuth.getCurrentUser() == null || lessonList.isEmpty()) {
+            showLessonsDirectly();
+            return;
+        }
+
+        String studentId = mAuth.getCurrentUser().getUid();
+
+        // Load all progress records for this student and course
+        db.collection("lesson_progress")
+                .whereEqualTo("studentId", studentId)
+                .whereEqualTo("courseId", courseId)
+                .whereEqualTo("isCompleted", true)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    // Create a set of completed lesson IDs
+                    java.util.Set<String> completedLessonIds = new java.util.HashSet<>();
+                    for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
+                        String lessonId = document.getString("lessonId");
+                        if (lessonId != null) {
+                            completedLessonIds.add(lessonId);
+                        }
+                    }
+
+                    // Update lesson completion status and accessibility
+                    for (int i = 0; i < lessonList.size(); i++) {
+                        Lesson lesson = lessonList.get(i);
+
+                        // Set completion status
+                        boolean isCompleted = completedLessonIds.contains(lesson.getId());
+                        lesson.setCompleted(isCompleted);
+
+                        // Set accessibility: first lesson is always accessible,
+                        // subsequent lessons are accessible if previous lesson is completed
+                        if (i == 0) {
+                            lesson.setAccessible(true);
+                            lesson.setLocked(false);
+                        } else {
+                            Lesson previousLesson = lessonList.get(i - 1);
+                            boolean isAccessible = previousLesson.isCompleted();
+                            lesson.setAccessible(isAccessible);
+                            lesson.setLocked(!isAccessible);
+                        }
+                    }
+
+                    android.util.Log.d("StudentCourseLessons", "Progress loaded. Completed lessons: " + completedLessonIds.size());
+                    showLessonsDirectly();
+                })
+                .addOnFailureListener(e -> {
+                    android.util.Log.e("StudentCourseLessons", "Error loading lesson progress", e);
+                    // Show lessons without progress status if loading fails
+                    showLessonsDirectly();
+                });
+    }
+
     private void showLessonsDirectly() {
         android.util.Log.d("StudentCourseLessons", "=== SHOWING LESSONS ===");
 
@@ -149,21 +201,15 @@ public class StudentCourseLessonsActivity extends AppCompatActivity implements S
             android.util.Log.d("StudentCourseLessons", "Lesson list is empty - showing no lessons layout");
             layoutNoLessons.setVisibility(View.VISIBLE);
             rvLessons.setVisibility(View.GONE);
+            Toast.makeText(this, "Khóa học này chưa có bài học nào", Toast.LENGTH_SHORT).show();
         } else {
             android.util.Log.d("StudentCourseLessons", "Showing " + lessonList.size() + " lessons in RecyclerView");
-
-            // Set all lessons as accessible for debugging
-            for (Lesson lesson : lessonList) {
-                lesson.setAccessible(true);
-                lesson.setLocked(false);
-                lesson.setCompleted(false);
-            }
 
             layoutNoLessons.setVisibility(View.GONE);
             rvLessons.setVisibility(View.VISIBLE);
             lessonAdapter.notifyDataSetChanged();
 
-            Toast.makeText(this, "DEBUG: Hiển thị " + lessonList.size() + " bài học", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "Đã tải " + lessonList.size() + " bài học", Toast.LENGTH_SHORT).show();
         }
     }
 

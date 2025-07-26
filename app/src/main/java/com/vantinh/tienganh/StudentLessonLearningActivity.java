@@ -14,6 +14,10 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.vantinh.tienganh.models.LessonProgress;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Date;
 
 public class StudentLessonLearningActivity extends AppCompatActivity {
 
@@ -30,6 +34,7 @@ public class StudentLessonLearningActivity extends AppCompatActivity {
     private FirebaseFirestore db;
     private String lessonId, lessonTitle, courseId, courseTitle, courseCategory;
     private Lesson currentLesson;
+    private boolean isLessonCompleted = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,6 +61,7 @@ public class StudentLessonLearningActivity extends AppCompatActivity {
         setupToolbar();
         setupClickListeners();
         loadLessonData();
+        checkLessonProgress();
     }
 
     private void initViews() {
@@ -195,16 +201,179 @@ public class StudentLessonLearningActivity extends AppCompatActivity {
         btnPreviousLesson.setEnabled(false);
     }
 
+    private void checkLessonProgress() {
+        if (mAuth.getCurrentUser() == null) {
+            return;
+        }
+
+        String studentId = mAuth.getCurrentUser().getUid();
+
+        db.collection("lesson_progress")
+                .whereEqualTo("studentId", studentId)
+                .whereEqualTo("courseId", courseId)
+                .whereEqualTo("lessonId", lessonId)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    if (!queryDocumentSnapshots.isEmpty()) {
+                        LessonProgress progress = queryDocumentSnapshots.getDocuments().get(0).toObject(LessonProgress.class);
+                        if (progress != null && progress.isCompleted()) {
+                            isLessonCompleted = true;
+                            btnMarkCompleted.setText("✅ Đã hoàn thành");
+                            btnMarkCompleted.setEnabled(false);
+                            btnMarkCompleted.setBackgroundColor(getColor(android.R.color.holo_green_light));
+                        }
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    android.util.Log.e("StudentLessonLearning", "Error checking lesson progress", e);
+                });
+    }
+
     private void markLessonAsCompleted() {
         if (mAuth.getCurrentUser() == null) {
             Toast.makeText(this, "Vui lòng đăng nhập", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        // TODO: Implement lesson completion tracking
-        Toast.makeText(this, "Đã đánh dấu hoàn thành bài học!", Toast.LENGTH_SHORT).show();
-        btnMarkCompleted.setText("Đã hoàn thành");
+        if (isLessonCompleted) {
+            Toast.makeText(this, "Bài học đã được đánh dấu hoàn thành trước đó", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String studentId = mAuth.getCurrentUser().getUid();
+
+        // Disable button while processing
         btnMarkCompleted.setEnabled(false);
+        btnMarkCompleted.setText("Đang lưu...");
+
+        // Check if progress record already exists
+        db.collection("lesson_progress")
+                .whereEqualTo("studentId", studentId)
+                .whereEqualTo("courseId", courseId)
+                .whereEqualTo("lessonId", lessonId)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    if (queryDocumentSnapshots.isEmpty()) {
+                        // Create new progress record
+                        createLessonProgress(studentId);
+                    } else {
+                        // Update existing progress record
+                        String progressId = queryDocumentSnapshots.getDocuments().get(0).getId();
+                        updateLessonProgress(progressId);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    android.util.Log.e("StudentLessonLearning", "Error checking lesson progress", e);
+                    btnMarkCompleted.setEnabled(true);
+                    btnMarkCompleted.setText("Đánh dấu hoàn thành");
+                    Toast.makeText(this, "Lỗi kiểm tra tiến độ: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    private void createLessonProgress(String studentId) {
+        Map<String, Object> progressData = new HashMap<>();
+        progressData.put("studentId", studentId);
+        progressData.put("courseId", courseId);
+        progressData.put("lessonId", lessonId);
+        progressData.put("isCompleted", true);
+        progressData.put("completedAt", new Date());
+        progressData.put("createdAt", new Date());
+        progressData.put("updatedAt", new Date());
+
+        db.collection("lesson_progress")
+                .add(progressData)
+                .addOnSuccessListener(documentReference -> {
+                    isLessonCompleted = true;
+                    btnMarkCompleted.setText("✅ Đã hoàn thành");
+                    btnMarkCompleted.setEnabled(false);
+                    btnMarkCompleted.setBackgroundColor(getColor(android.R.color.holo_green_light));
+
+                    Toast.makeText(this, "Đã đánh dấu hoàn thành bài học!", Toast.LENGTH_SHORT).show();
+                    android.util.Log.d("StudentLessonLearning", "Lesson progress created successfully");
+
+                    // Calculate and show updated course progress
+                    calculateAndShowCourseProgress();
+                })
+                .addOnFailureListener(e -> {
+                    android.util.Log.e("StudentLessonLearning", "Error creating lesson progress", e);
+                    btnMarkCompleted.setEnabled(true);
+                    btnMarkCompleted.setText("Đánh dấu hoàn thành");
+                    Toast.makeText(this, "Lỗi lưu tiến độ: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    private void updateLessonProgress(String progressId) {
+        Map<String, Object> updateData = new HashMap<>();
+        updateData.put("isCompleted", true);
+        updateData.put("completedAt", new Date());
+        updateData.put("updatedAt", new Date());
+
+        db.collection("lesson_progress").document(progressId)
+                .update(updateData)
+                .addOnSuccessListener(aVoid -> {
+                    isLessonCompleted = true;
+                    btnMarkCompleted.setText("✅ Đã hoàn thành");
+                    btnMarkCompleted.setEnabled(false);
+                    btnMarkCompleted.setBackgroundColor(getColor(android.R.color.holo_green_light));
+
+                    Toast.makeText(this, "Đã đánh dấu hoàn thành bài học!", Toast.LENGTH_SHORT).show();
+                    android.util.Log.d("StudentLessonLearning", "Lesson progress updated successfully");
+
+                    // Calculate and show updated course progress
+                    calculateAndShowCourseProgress();
+                })
+                .addOnFailureListener(e -> {
+                    android.util.Log.e("StudentLessonLearning", "Error updating lesson progress", e);
+                    btnMarkCompleted.setEnabled(true);
+                    btnMarkCompleted.setText("Đánh dấu hoàn thành");
+                    Toast.makeText(this, "Lỗi cập nhật tiến độ: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    // New method to calculate and display course progress after completing a lesson
+    private void calculateAndShowCourseProgress() {
+        if (mAuth.getCurrentUser() == null) return;
+
+        String studentId = mAuth.getCurrentUser().getUid();
+
+        // Get total lessons count
+        db.collection("lessons")
+                .whereEqualTo("courseId", courseId)
+                .whereEqualTo("isPublished", true)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    int totalLessons = queryDocumentSnapshots.size();
+
+                    // Get completed lessons count
+                    db.collection("lesson_progress")
+                            .whereEqualTo("studentId", studentId)
+                            .whereEqualTo("courseId", courseId)
+                            .whereEqualTo("isCompleted", true)
+                            .get()
+                            .addOnSuccessListener(progressSnapshots -> {
+                                int completedLessons = progressSnapshots.size();
+                                int progressPercentage = totalLessons > 0 ? (completedLessons * 100) / totalLessons : 0;
+
+                                // Show progress update
+                                String progressMessage = "📊 Tiến độ khóa học: " + completedLessons + "/" + totalLessons +
+                                                       " (" + progressPercentage + "% hoàn thành)";
+
+                                Toast.makeText(this, progressMessage, Toast.LENGTH_LONG).show();
+
+                                // Check if course is completed
+                                if (completedLessons == totalLessons && totalLessons > 0) {
+                                    Toast.makeText(this, "🎉 Chúc mừng! Bạn đã hoàn thành toàn bộ khóa học: " + courseTitle + "!", Toast.LENGTH_LONG).show();
+                                }
+
+                                android.util.Log.d("StudentLessonLearning", "Course progress: " + completedLessons + "/" + totalLessons + " = " + progressPercentage + "%");
+                            })
+                            .addOnFailureListener(e -> {
+                                android.util.Log.e("StudentLessonLearning", "Error calculating course progress", e);
+                            });
+                })
+                .addOnFailureListener(e -> {
+                    android.util.Log.e("StudentLessonLearning", "Error getting total lessons", e);
+                });
     }
 
     private void navigateToNextLesson() {

@@ -21,7 +21,7 @@ public class EditTestQuestionAdapter extends RecyclerView.Adapter<EditTestQuesti
         void onQuestionClick(SimpleTestQuestion question);
     }
 
-    public EditTestQuestionAdapter(List<SimpleTestQuestion> questions,
+    public EditTestQuestionAdapter(List<SimpleTestQuestion> questions, 
                                   OnQuestionClickListener editListener,
                                   OnQuestionClickListener deleteListener) {
         this.questions = questions;
@@ -40,10 +40,10 @@ public class EditTestQuestionAdapter extends RecyclerView.Adapter<EditTestQuesti
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         SimpleTestQuestion question = questions.get(position);
-
+        
         holder.tvQuestionNumber.setText("Câu " + (position + 1));
         holder.tvQuestion.setText(question.getQuestion());
-
+        
         // Hiển thị các lựa chọn
         List<String> options = question.getCorrectAnswer();
         if (options != null && options.size() >= 4) {
@@ -52,7 +52,7 @@ public class EditTestQuestionAdapter extends RecyclerView.Adapter<EditTestQuesti
             holder.tvOptionC.setText("C. " + options.get(2));
             holder.tvOptionD.setText("D. " + options.get(3));
         }
-
+        
         // Hiển thị đáp án đúng
         int correctIndex = question.getOptions();
         String correctLabel = "";
@@ -63,14 +63,14 @@ public class EditTestQuestionAdapter extends RecyclerView.Adapter<EditTestQuesti
             case 3: correctLabel = "D"; break;
         }
         holder.tvCorrectAnswer.setText("Đáp án đúng: " + correctLabel);
-
+        
         // Set click listeners
         holder.btnEdit.setOnClickListener(v -> {
             if (editListener != null) {
                 editListener.onQuestionClick(question);
             }
         });
-
+        
         holder.btnDelete.setOnClickListener(v -> {
             if (deleteListener != null) {
                 deleteListener.onQuestionClick(question);

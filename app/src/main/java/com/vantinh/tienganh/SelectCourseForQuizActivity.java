@@ -63,7 +63,7 @@ public class SelectCourseForQuizActivity extends AppCompatActivity implements Co
 
     private void loadCourses() {
         String teacherId = mAuth.getCurrentUser().getUid();
-
+        
         db.collection("courses")
                 .whereEqualTo("teacherId", teacherId)
                 .get()
