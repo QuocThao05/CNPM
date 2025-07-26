@@ -1,18 +1,26 @@
 package com.vantinh.tienganh;
 
+import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.LinearLayout;
+import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import com.google.android.material.button.MaterialButton;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
@@ -23,13 +31,22 @@ public class CourseManagementActivity extends AppCompatActivity {
 
     private RecyclerView rvCourses;
     private FloatingActionButton fabAddCourse;
-    private LinearLayout tvNoCourses; // Changed from TextView to LinearLayout
+    private LinearLayout tvNoCourses;
     private Toolbar toolbar;
+    private TextInputEditText etSearch;
+    private MaterialButton btnFilter;
+    private TextView tvTotalCourses, tvTotalStudents, tvAvgRating, tvCourseCount;
 
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
     private List<Course> courseList;
+    private List<Course> filteredCourseList;
     private CourseAdapter courseAdapter;
+
+    // Filter variables
+    private String selectedCategory = "Tất cả";
+    private String selectedLevel = "Tất cả";
+    private String searchQuery = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,12 +56,15 @@ public class CourseManagementActivity extends AppCompatActivity {
         mAuth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
         courseList = new ArrayList<>();
+        filteredCourseList = new ArrayList<>();
 
         initViews();
         setupToolbar();
         setupRecyclerView();
+        setupSearchAndFilter();
         setupClickListeners();
         loadCourses();
+        loadStatistics();
     }
 
     private void initViews() {
@@ -52,6 +72,12 @@ public class CourseManagementActivity extends AppCompatActivity {
         rvCourses = findViewById(R.id.rv_courses);
         fabAddCourse = findViewById(R.id.fab_add_course);
         tvNoCourses = findViewById(R.id.tv_no_courses);
+        etSearch = findViewById(R.id.et_search);
+        btnFilter = findViewById(R.id.btn_filter);
+        tvTotalCourses = findViewById(R.id.tv_total_courses);
+        tvTotalStudents = findViewById(R.id.tv_total_students);
+        tvAvgRating = findViewById(R.id.tv_avg_rating);
+        tvCourseCount = findViewById(R.id.tv_course_count);
     }
 
     private void setupToolbar() {
@@ -94,11 +120,178 @@ public class CourseManagementActivity extends AppCompatActivity {
         rvCourses.setAdapter(courseAdapter);
     }
 
-    private void setupClickListeners() {
-        fabAddCourse.setOnClickListener(v -> {
-            Intent intent = new Intent(this, CreateCourseActivity.class);
-            startActivity(intent);
+    private void setupSearchAndFilter() {
+        // Setup search functionality
+        if (etSearch != null) {
+            etSearch.addTextChangedListener(new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                    searchQuery = s.toString().trim();
+                    filterCourses();
+                }
+
+                @Override
+                public void afterTextChanged(Editable s) {}
+            });
+        }
+
+        // Setup filter button
+        if (btnFilter != null) {
+            btnFilter.setOnClickListener(v -> showFilterDialog());
+        }
+    }
+
+    private void showFilterDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_course_filter, null);
+
+        Spinner spinnerCategory = dialogView.findViewById(R.id.spinner_category);
+        Spinner spinnerLevel = dialogView.findViewById(R.id.spinner_level);
+        MaterialButton btnApply = dialogView.findViewById(R.id.btn_apply_filter);
+        MaterialButton btnReset = dialogView.findViewById(R.id.btn_reset_filter);
+
+        // Setup category spinner
+        String[] categories = {"Tất cả", "Ngữ pháp", "Từ vựng", "Phát âm", "Nghe", "Nói", "Đọc", "Viết"};
+        ArrayAdapter<String> categoryAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, categories);
+        categoryAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerCategory.setAdapter(categoryAdapter);
+
+        // Setup level spinner
+        String[] levels = {"Tất cả", "Beginner", "Intermediate", "Advanced"};
+        ArrayAdapter<String> levelAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, levels);
+        levelAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerLevel.setAdapter(levelAdapter);
+
+        // Set current selections
+        spinnerCategory.setSelection(getCategoryPosition(selectedCategory));
+        spinnerLevel.setSelection(getLevelPosition(selectedLevel));
+
+        AlertDialog dialog = builder.setView(dialogView).create();
+
+        btnApply.setOnClickListener(v -> {
+            selectedCategory = spinnerCategory.getSelectedItem().toString();
+            selectedLevel = spinnerLevel.getSelectedItem().toString();
+            filterCourses();
+            updateFilterButtonText();
+            dialog.dismiss();
+            Toast.makeText(this, "Đã áp dụng bộ lọc", Toast.LENGTH_SHORT).show();
         });
+
+        btnReset.setOnClickListener(v -> {
+            selectedCategory = "Tất cả";
+            selectedLevel = "Tất cả";
+            spinnerCategory.setSelection(0);
+            spinnerLevel.setSelection(0);
+            filterCourses();
+            updateFilterButtonText();
+            dialog.dismiss();
+            Toast.makeText(this, "Đã reset bộ lọc", Toast.LENGTH_SHORT).show();
+        });
+
+        dialog.show();
+    }
+
+    private int getCategoryPosition(String category) {
+        String[] categories = {"Tất cả", "Ngữ pháp", "Từ vựng", "Phát âm", "Nghe", "Nói", "Đọc", "Viết"};
+        for (int i = 0; i < categories.length; i++) {
+            if (categories[i].equals(category)) {
+                return i;
+            }
+        }
+        return 0;
+    }
+
+    private int getLevelPosition(String level) {
+        String[] levels = {"Tất cả", "Beginner", "Intermediate", "Advanced"};
+        for (int i = 0; i < levels.length; i++) {
+            if (levels[i].equals(level)) {
+                return i;
+            }
+        }
+        return 0;
+    }
+
+    private void updateFilterButtonText() {
+        boolean hasFilters = !selectedCategory.equals("Tất cả") || !selectedLevel.equals("Tất cả");
+        if (hasFilters) {
+            btnFilter.setText("🔧 Lọc (" + getActiveFilterCount() + ")");
+        } else {
+            btnFilter.setText("🔧 Lọc");
+        }
+    }
+
+    private int getActiveFilterCount() {
+        int count = 0;
+        if (!selectedCategory.equals("Tất cả")) count++;
+        if (!selectedLevel.equals("Tất cả")) count++;
+        return count;
+    }
+
+    private void filterCourses() {
+        filteredCourseList.clear();
+
+        for (Course course : courseList) {
+            boolean matchesSearch = searchQuery.isEmpty() ||
+                course.getTitle().toLowerCase().contains(searchQuery.toLowerCase()) ||
+                course.getDescription().toLowerCase().contains(searchQuery.toLowerCase());
+
+            boolean matchesCategory = selectedCategory.equals("Tất cả") ||
+                course.getCategory().equals(selectedCategory);
+
+            boolean matchesLevel = selectedLevel.equals("Tất cả") ||
+                course.getLevel().equals(selectedLevel);
+
+            if (matchesSearch && matchesCategory && matchesLevel) {
+                filteredCourseList.add(course);
+            }
+        }
+
+        // Update adapter with filtered list
+        courseAdapter.updateCourseList(filteredCourseList);
+        updateUI();
+    }
+
+    private void updateUI() {
+        if (filteredCourseList.isEmpty()) {
+            tvNoCourses.setVisibility(View.VISIBLE);
+            rvCourses.setVisibility(View.GONE);
+        } else {
+            tvNoCourses.setVisibility(View.GONE);
+            rvCourses.setVisibility(View.VISIBLE);
+        }
+
+        // Update course count
+        if (tvCourseCount != null) {
+            String countText = filteredCourseList.size() + " khóa học";
+            if (!searchQuery.isEmpty() || !selectedCategory.equals("Tất cả") || !selectedLevel.equals("Tất cả")) {
+                countText += " (đã lọc)";
+            }
+            tvCourseCount.setText(countText);
+        }
+    }
+
+    private void loadStatistics() {
+        if (mAuth.getCurrentUser() == null) return;
+
+        String currentUserId = mAuth.getCurrentUser().getUid();
+
+        // Load total students count
+        db.collection("enrollments")
+            .whereEqualTo("teacherId", currentUserId)
+            .get()
+            .addOnSuccessListener(queryDocumentSnapshots -> {
+                if (tvTotalStudents != null) {
+                    tvTotalStudents.setText(String.valueOf(queryDocumentSnapshots.size()));
+                }
+            });
+
+        // Set average rating (placeholder)
+        if (tvAvgRating != null) {
+            tvAvgRating.setText("4.8");
+        }
     }
 
     private void loadCourses() {
@@ -111,16 +304,12 @@ public class CourseManagementActivity extends AppCompatActivity {
 
         String currentUserId = mAuth.getCurrentUser().getUid();
 
-        // Add debug logging
-        android.util.Log.d("CourseManagement", "Loading courses for user: " + currentUserId);
-
         db.collection("courses")
             .whereEqualTo("teacherId", currentUserId)
             .get()
             .addOnCompleteListener(task -> {
                 if (task.isSuccessful()) {
                     courseList.clear();
-                    android.util.Log.d("CourseManagement", "Found " + task.getResult().size() + " courses");
 
                     for (QueryDocumentSnapshot document : task.getResult()) {
                         Course course = document.toObject(Course.class);
@@ -128,20 +317,35 @@ public class CourseManagementActivity extends AppCompatActivity {
                         courseList.add(course);
                     }
 
-                    if (courseList.isEmpty()) {
-                        tvNoCourses.setVisibility(View.VISIBLE);
-                        rvCourses.setVisibility(View.GONE);
-                    } else {
-                        tvNoCourses.setVisibility(View.GONE);
-                        rvCourses.setVisibility(View.VISIBLE);
+                    // Update total courses count
+                    if (tvTotalCourses != null) {
+                        tvTotalCourses.setText(String.valueOf(courseList.size()));
                     }
 
-                    courseAdapter.notifyDataSetChanged();
+                    // Apply current filters
+                    filterCourses();
+
                 } else {
                     android.util.Log.e("CourseManagement", "Error loading courses", task.getException());
                     Toast.makeText(this, "Lỗi khi tải khóa học: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
                 }
             });
+    }
+
+    private void setupClickListeners() {
+        fabAddCourse.setOnClickListener(v -> {
+            Intent intent = new Intent(this, CreateCourseActivity.class);
+            startActivity(intent);
+        });
+
+        // Add click listener for create first course button in empty state
+        MaterialButton btnCreateFirstCourse = findViewById(R.id.btn_create_first_course);
+        if (btnCreateFirstCourse != null) {
+            btnCreateFirstCourse.setOnClickListener(v -> {
+                Intent intent = new Intent(this, CreateCourseActivity.class);
+                startActivity(intent);
+            });
+        }
     }
 
     @Override
@@ -161,7 +365,10 @@ public class CourseManagementActivity extends AppCompatActivity {
             loadCourses();
             return true;
         } else if (itemId == R.id.action_search) {
-            // Implement search functionality
+            // Focus on search input
+            if (etSearch != null) {
+                etSearch.requestFocus();
+            }
             return true;
         }
 
