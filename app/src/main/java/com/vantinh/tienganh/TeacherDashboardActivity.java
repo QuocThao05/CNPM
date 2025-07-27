@@ -77,14 +77,21 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             startActivity(new Intent(this, SelectCourseForQuizActivity.class));
         });
 
+        // Nút "Quản lý đăng ký" - chuyển đến EnrollmentManagementActivity
         btnCreateCourse.setOnClickListener(v -> {
-            startActivity(new Intent(this, CreateCourseActivity.class));
+            Intent intent = new Intent(this, EnrollmentManagementActivity.class);
+            // Truyền teacherId để activity có thể lọc dữ liệu theo giáo viên
+            intent.putExtra("teacherId", currentTeacherId);
+            startActivity(intent);
         });
     }
 
     private void loadDashboardData() {
         String teacherId = mAuth.getCurrentUser().getUid();
         currentTeacherId = teacherId; // Lưu teacherId trực tiếp
+
+        // Thêm debug enrollments
+        debugEnrollments();
 
         // Load teacher info
         db.collection("users").document(teacherId)
@@ -119,14 +126,75 @@ public class TeacherDashboardActivity extends AppCompatActivity {
     }
 
     private void loadStudentsCount(String teacherId) {
-        db.collection("enrollments")
-                .whereEqualTo("teacherId", teacherId)
+        Log.d("TeacherDashboard", "Starting loadStudentsCount for teacherId: " + teacherId);
+
+        // Lấy tất cả approved requests từ courseRequests
+        db.collection("courseRequests")
+                .whereEqualTo("status", "approved")
                 .get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
-                    int count = queryDocumentSnapshots.size();
-                    tvStudentsCount.setText(String.valueOf(count));
+                .addOnSuccessListener(approvedRequests -> {
+                    Log.d("TeacherDashboard", "Found " + approvedRequests.size() + " approved requests total");
+
+                    if (approvedRequests.isEmpty()) {
+                        Log.d("TeacherDashboard", "No approved requests found, setting students count to 0");
+                        tvStudentsCount.setText("0");
+                        return;
+                    }
+
+                    // Lấy danh sách courseIds của teacher này
+                    db.collection("courses")
+                            .whereEqualTo("teacherId", teacherId)
+                            .get()
+                            .addOnSuccessListener(teacherCourses -> {
+                                Log.d("TeacherDashboard", "Teacher has " + teacherCourses.size() + " courses");
+
+                                // Tạo Set chứa courseIds của teacher
+                                java.util.Set<String> teacherCourseIds = new java.util.HashSet<>();
+                                for (com.google.firebase.firestore.QueryDocumentSnapshot courseDoc : teacherCourses) {
+                                    teacherCourseIds.add(courseDoc.getId());
+                                    Log.d("TeacherDashboard", "Teacher course ID: " + courseDoc.getId());
+                                }
+
+                                // Tạo Set để lưu unique studentId của teacher này
+                                java.util.Set<String> uniqueStudentIds = new java.util.HashSet<>();
+
+                                // Duyệt qua tất cả approved requests
+                                for (com.google.firebase.firestore.QueryDocumentSnapshot requestDoc : approvedRequests) {
+                                    String studentName = requestDoc.getString("studentName");
+                                    String studentId = requestDoc.getString("studentId");
+                                    String courseId = requestDoc.getString("courseId");
+                                    String courseName = requestDoc.getString("courseName");
+
+                                    Log.d("TeacherDashboard", "Processing approved request - Student: " + studentName +
+                                            ", StudentId: " + studentId + ", CourseId: " + courseId + ", Course: " + courseName);
+
+                                    // Chỉ đếm nếu courseId thuộc về teacher này
+                                    if (teacherCourseIds.contains(courseId)) {
+                                        if (studentId != null && !studentId.isEmpty()) {
+                                            uniqueStudentIds.add(studentId);
+                                            Log.d("TeacherDashboard", "Added studentId: " + studentId +
+                                                    " for teacher's course: " + courseName + ". Total unique students: " + uniqueStudentIds.size());
+                                        }
+                                    } else {
+                                        Log.d("TeacherDashboard", "Skipping request for course not belonging to this teacher: " + courseName);
+                                    }
+                                }
+
+                                // Cập nhật UI
+                                int finalCount = uniqueStudentIds.size();
+                                Log.d("TeacherDashboard", "Final unique students count for teacher: " + finalCount);
+
+                                runOnUiThread(() -> {
+                                    tvStudentsCount.setText(String.valueOf(finalCount));
+                                });
+                            })
+                            .addOnFailureListener(e -> {
+                                Log.e("TeacherDashboard", "Error loading teacher courses", e);
+                                tvStudentsCount.setText("0");
+                            });
                 })
                 .addOnFailureListener(e -> {
+                    Log.e("TeacherDashboard", "Error loading approved requests", e);
                     tvStudentsCount.setText("0");
                 });
     }
@@ -170,6 +238,33 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                             }
                         });
                     }
+                });
+    }
+
+    // Thêm method debug để kiểm tra enrollments
+    private void debugEnrollments() {
+        Log.d("TeacherDashboard", "=== DEBUG: Checking all enrollments ===");
+
+        db.collection("enrollments")
+                .get()
+                .addOnSuccessListener(snapshots -> {
+                    Log.d("TeacherDashboard", "Total enrollments in database: " + snapshots.size());
+
+                    if (snapshots.isEmpty()) {
+                        Log.d("TeacherDashboard", "❌ NO ENROLLMENTS FOUND - This is why student count is 0");
+                        return;
+                    }
+
+                    for (com.google.firebase.firestore.QueryDocumentSnapshot doc : snapshots) {
+                        String courseID = doc.getString("courseID");
+                        String studentID = doc.getString("studentID");
+                        String fullName = doc.getString("fullName");
+
+                        Log.d("TeacherDashboard", "Enrollment: " + fullName + " → Course: " + courseID + " (StudentID: " + studentID + ")");
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("TeacherDashboard", "Error checking enrollments", e);
                 });
     }
 

@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -278,20 +279,95 @@ public class CourseManagementActivity extends AppCompatActivity {
 
         String currentUserId = mAuth.getCurrentUser().getUid();
 
-        // Load total students count
-        db.collection("enrollments")
-            .whereEqualTo("teacherId", currentUserId)
-            .get()
-            .addOnSuccessListener(queryDocumentSnapshots -> {
-                if (tvTotalStudents != null) {
-                    tvTotalStudents.setText(String.valueOf(queryDocumentSnapshots.size()));
-                }
-            });
+        // Load total students count từ courseRequests với status "approved"
+        loadTotalStudentsFromApprovedRequests(currentUserId);
 
         // Set average rating (placeholder)
         if (tvAvgRating != null) {
             tvAvgRating.setText("4.8");
         }
+    }
+
+    private void loadTotalStudentsFromApprovedRequests(String teacherId) {
+        Log.d("CourseManagement", "Loading total students from approved requests for teacherId: " + teacherId);
+
+        // Lấy tất cả approved requests từ courseRequests
+        db.collection("courseRequests")
+                .whereEqualTo("status", "approved")
+                .get()
+                .addOnSuccessListener(approvedRequests -> {
+                    Log.d("CourseManagement", "Found " + approvedRequests.size() + " approved requests total");
+
+                    if (approvedRequests.isEmpty()) {
+                        Log.d("CourseManagement", "No approved requests found, setting students count to 0");
+                        if (tvTotalStudents != null) {
+                            tvTotalStudents.setText("0");
+                        }
+                        return;
+                    }
+
+                    // Lấy danh sách courseIds của teacher này
+                    db.collection("courses")
+                            .whereEqualTo("teacherId", teacherId)
+                            .get()
+                            .addOnSuccessListener(teacherCourses -> {
+                                Log.d("CourseManagement", "Teacher has " + teacherCourses.size() + " courses");
+
+                                // Tạo Set chứa courseIds của teacher
+                                java.util.Set<String> teacherCourseIds = new java.util.HashSet<>();
+                                for (com.google.firebase.firestore.QueryDocumentSnapshot courseDoc : teacherCourses) {
+                                    teacherCourseIds.add(courseDoc.getId());
+                                    Log.d("CourseManagement", "Teacher course ID: " + courseDoc.getId());
+                                }
+
+                                // Tạo Set để lưu unique studentId của teacher này
+                                java.util.Set<String> uniqueStudentIds = new java.util.HashSet<>();
+
+                                // Duyệt qua tất cả approved requests
+                                for (com.google.firebase.firestore.QueryDocumentSnapshot requestDoc : approvedRequests) {
+                                    String studentName = requestDoc.getString("studentName");
+                                    String studentId = requestDoc.getString("studentId");
+                                    String courseId = requestDoc.getString("courseId");
+                                    String courseName = requestDoc.getString("courseName");
+
+                                    Log.d("CourseManagement", "Processing approved request - Student: " + studentName +
+                                          ", StudentId: " + studentId + ", CourseId: " + courseId + ", Course: " + courseName);
+
+                                    // Chỉ đếm nếu courseId thuộc về teacher này
+                                    if (teacherCourseIds.contains(courseId)) {
+                                        if (studentId != null && !studentId.isEmpty()) {
+                                            uniqueStudentIds.add(studentId);
+                                            Log.d("CourseManagement", "Added studentId: " + studentId +
+                                                  " for teacher's course: " + courseName + ". Total unique students: " + uniqueStudentIds.size());
+                                        }
+                                    } else {
+                                        Log.d("CourseManagement", "Skipping request for course not belonging to this teacher: " + courseName);
+                                    }
+                                }
+
+                                // Cập nhật UI
+                                int finalCount = uniqueStudentIds.size();
+                                Log.d("CourseManagement", "Final unique students count for teacher: " + finalCount);
+
+                                runOnUiThread(() -> {
+                                    if (tvTotalStudents != null) {
+                                        tvTotalStudents.setText(String.valueOf(finalCount));
+                                    }
+                                });
+                            })
+                            .addOnFailureListener(e -> {
+                                Log.e("CourseManagement", "Error loading teacher courses", e);
+                                if (tvTotalStudents != null) {
+                                    tvTotalStudents.setText("0");
+                                }
+                            });
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("CourseManagement", "Error loading approved requests", e);
+                    if (tvTotalStudents != null) {
+                        tvTotalStudents.setText("0");
+                    }
+                });
     }
 
     private void loadCourses() {

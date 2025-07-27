@@ -9,6 +9,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.cardview.widget.CardView;
 import androidx.recyclerview.widget.RecyclerView;
+import com.google.firebase.firestore.FirebaseFirestore;
 import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Locale;
@@ -17,6 +18,7 @@ public class CourseAdapter extends RecyclerView.Adapter<CourseAdapter.CourseView
 
     private List<Course> courseList;
     private OnCourseClickListener listener;
+    private FirebaseFirestore db;
 
     public interface OnCourseClickListener {
         void onCourseClick(Course course);
@@ -27,6 +29,7 @@ public class CourseAdapter extends RecyclerView.Adapter<CourseAdapter.CourseView
     public CourseAdapter(List<Course> courseList, OnCourseClickListener listener) {
         this.courseList = courseList;
         this.listener = listener;
+        this.db = FirebaseFirestore.getInstance();
     }
 
     // Method to update course list for filtering
@@ -90,12 +93,15 @@ public class CourseAdapter extends RecyclerView.Adapter<CourseAdapter.CourseView
             tvCourseLevel.setText(course.getLevel());
             tvCourseCategory.setText(course.getCategory());
             tvCourseDuration.setText(course.getDuration() + " giờ");
-            tvEnrolledStudents.setText(course.getEnrolledStudents() + " học viên");
+
+            // Load số học viên thực tế từ courseRequests với status "approved"
+            loadEnrolledStudentsCount(course.getId(), tvEnrolledStudents);
+
             tvCourseRating.setText(String.format(Locale.getDefault(), "%.1f★", course.getRating()));
 
             if (course.getCreatedAt() != null) {
                 SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
-                tvCreatedDate.setText("Tạo: " + sdf.format(course.getCreatedAt()));
+                tvCreatedDate.setText("📅 " + sdf.format(course.getCreatedAt()));
             }
 
             // Set course image (placeholder for now)
@@ -133,6 +139,45 @@ public class CourseAdapter extends RecyclerView.Adapter<CourseAdapter.CourseView
                 }
                 return false;
             });
+        }
+
+        private void loadEnrolledStudentsCount(String courseId, TextView tvEnrolledStudents) {
+            // Hiển thị loading state
+            tvEnrolledStudents.setText("👥 ⏳...");
+
+            // Query courseRequests với status "approved" cho courseId này
+            db.collection("courseRequests")
+                    .whereEqualTo("courseId", courseId)
+                    .whereEqualTo("status", "approved")
+                    .get()
+                    .addOnSuccessListener(queryDocumentSnapshots -> {
+                        // Đếm unique studentId để tránh trùng lặp
+                        java.util.Set<String> uniqueStudentIds = new java.util.HashSet<>();
+
+                        for (com.google.firebase.firestore.QueryDocumentSnapshot doc : queryDocumentSnapshots) {
+                            String studentId = doc.getString("studentId");
+                            String studentName = doc.getString("studentName");
+                            String courseName = doc.getString("courseName");
+
+                            android.util.Log.d("CourseAdapter", "Found approved request - Student: " + studentName +
+                                  ", StudentId: " + studentId + ", Course: " + courseName + ", CourseId: " + courseId);
+
+                            if (studentId != null && !studentId.isEmpty()) {
+                                uniqueStudentIds.add(studentId);
+                            }
+                        }
+
+                        int enrolledCount = uniqueStudentIds.size();
+                        android.util.Log.d("CourseAdapter", "Course " + courseId + " has " + enrolledCount + " unique enrolled students");
+
+                        // Cập nhật UI với số học viên thực tế
+                        tvEnrolledStudents.setText("👥 " + enrolledCount + " học viên");
+                    })
+                    .addOnFailureListener(e -> {
+                        android.util.Log.e("CourseAdapter", "Error loading enrolled students for course: " + courseId, e);
+                        // Hiển thị fallback nếu có lỗi
+                        tvEnrolledStudents.setText("👥 0 học viên");
+                    });
         }
     }
 }

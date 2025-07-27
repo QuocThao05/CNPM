@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -22,7 +23,8 @@ import java.util.List;
 public class CourseStudentsActivity extends AppCompatActivity {
 
     private RecyclerView rvStudents;
-    private TextView tvNoStudents, tvCourseTitle;
+    private LinearLayout layoutNoStudents;  // Đổi từ TextView thành LinearLayout
+    private TextView tvCourseTitle;
     private ProgressBar progressBar;
     private BottomNavigationView bottomNavigation;
     private Toolbar toolbar;
@@ -63,7 +65,7 @@ public class CourseStudentsActivity extends AppCompatActivity {
         toolbar = findViewById(R.id.toolbar);
         bottomNavigation = findViewById(R.id.bottom_navigation);
         rvStudents = findViewById(R.id.rv_students);
-        tvNoStudents = findViewById(R.id.tv_no_students);
+        layoutNoStudents = findViewById(R.id.tv_no_students); // Sử dụng ID đúng từ layout XML
         tvCourseTitle = findViewById(R.id.tv_course_title);
         progressBar = findViewById(R.id.progress_bar);
 
@@ -131,104 +133,54 @@ public class CourseStudentsActivity extends AppCompatActivity {
     private void loadStudents() {
         progressBar.setVisibility(View.VISIBLE);
 
-        // Load all approved enrollments for this course
-        db.collection("enrollments")
+        // Load students từ courseRequests với status "approved" cho courseId này
+        db.collection("courseRequests")
                 .whereEqualTo("courseId", courseId)
-                .whereEqualTo("status", "APPROVED")
+                .whereEqualTo("status", "approved")
                 .get()
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
                         studentList.clear();
 
                         if (task.getResult().isEmpty()) {
+                            android.util.Log.d("CourseStudents", "No approved requests found for courseId: " + courseId);
                             updateUI();
                             progressBar.setVisibility(View.GONE);
                             return;
                         }
 
-                        final int totalEnrollments = task.getResult().size();
-                        final int[] processedCount = {0};
+                        android.util.Log.d("CourseStudents", "Found " + task.getResult().size() + " approved requests for courseId: " + courseId);
 
                         for (QueryDocumentSnapshot doc : task.getResult()) {
-                            Enrollment enrollment = doc.toObject(Enrollment.class);
-                            enrollment.setId(doc.getId());
+                            // Lấy dữ liệu trực tiếp từ courseRequests
+                            String studentName = doc.getString("studentName");
+                            String studentId = doc.getString("studentId");
+                            String studentEmail = doc.getString("studentEmail");
+                            String courseName = doc.getString("courseName");
 
-                            // Load student details
-                            loadStudentDetails(enrollment, () -> {
-                                processedCount[0]++;
-                                if (processedCount[0] == totalEnrollments) {
-                                    updateUI();
-                                    progressBar.setVisibility(View.GONE);
-                                }
-                            });
-                        }
-                    } else {
-                        progressBar.setVisibility(View.GONE);
-                        Toast.makeText(this, "Lỗi tải danh sách học viên", Toast.LENGTH_SHORT).show();
-                    }
-                });
-    }
+                            android.util.Log.d("CourseStudents", "Processing approved request - Student: " + studentName +
+                                  ", StudentId: " + studentId + ", Course: " + courseName);
 
-    private void loadStudentDetails(Enrollment enrollment, Runnable onComplete) {
-        db.collection("users").document(enrollment.getStudentId())
-                .get()
-                .addOnSuccessListener(studentDoc -> {
-                    if (studentDoc.exists()) {
-                        CourseStudent student = new CourseStudent();
-                        student.setStudentId(enrollment.getStudentId());
-                        student.setStudentName(studentDoc.getString("name"));
-                        student.setStudentEmail(studentDoc.getString("email"));
-                        student.setEnrollmentDate(enrollment.getEnrollmentDate());
-                        student.setEnrollmentId(enrollment.getId());
+                            // Tạo CourseStudent object
+                            CourseStudent student = new CourseStudent();
+                            student.setStudentId(studentId);
+                            student.setStudentName(studentName);
+                            student.setStudentEmail(studentEmail);
+                            student.setEnrollmentDate(new java.util.Date()); // Có thể lấy từ timestamp nếu có
 
-                        // Load progress info
-                        loadStudentProgress(student, () -> {
                             studentList.add(student);
-                            onComplete.run();
-                        });
-                    } else {
-                        onComplete.run();
-                    }
-                })
-                .addOnFailureListener(e -> onComplete.run());
-    }
-
-    private void loadStudentProgress(CourseStudent student, Runnable onComplete) {
-        // Load quiz results for progress calculation
-        db.collection("quiz_results")
-                .whereEqualTo("studentId", student.getStudentId())
-                .whereEqualTo("courseId", courseId)
-                .get()
-                .addOnCompleteListener(task -> {
-                    if (task.isSuccessful()) {
-                        int completedQuizzes = task.getResult().size();
-                        double totalScore = 0;
-
-                        for (QueryDocumentSnapshot quizDoc : task.getResult()) {
-                            Double score = quizDoc.getDouble("score");
-                            if (score != null) {
-                                totalScore += score;
-                            }
                         }
 
-                        student.setCompletedQuizzes(completedQuizzes);
-                        student.setAverageScore(completedQuizzes > 0 ? totalScore / completedQuizzes : 0);
+                        android.util.Log.d("CourseStudents", "Added " + studentList.size() + " students to list");
+                        updateUI();
+                        progressBar.setVisibility(View.GONE);
 
-                        // Load total quizzes in course to calculate progress
-                        db.collection("quizzes")
-                                .whereEqualTo("courseId", courseId)
-                                .get()
-                                .addOnCompleteListener(quizTask -> {
-                                    if (quizTask.isSuccessful()) {
-                                        int totalQuizzes = quizTask.getResult().size();
-                                        student.setTotalQuizzes(totalQuizzes);
-                                        double progress = totalQuizzes > 0 ? (double) completedQuizzes / totalQuizzes * 100 : 0;
-                                        student.setProgress(progress);
-                                    }
-                                    onComplete.run();
-                                });
                     } else {
-                        onComplete.run();
+                        android.util.Log.e("CourseStudents", "Error loading approved requests", task.getException());
+                        progressBar.setVisibility(View.GONE);
+                        Toast.makeText(this, "Lỗi tải danh sách học viên: " +
+                            (task.getException() != null ? task.getException().getMessage() : "Unknown error"),
+                            Toast.LENGTH_SHORT).show();
                     }
                 });
     }
@@ -266,10 +218,10 @@ public class CourseStudentsActivity extends AppCompatActivity {
 
     private void updateUI() {
         if (studentList.isEmpty()) {
-            tvNoStudents.setVisibility(View.VISIBLE);
+            layoutNoStudents.setVisibility(View.VISIBLE);
             rvStudents.setVisibility(View.GONE);
         } else {
-            tvNoStudents.setVisibility(View.GONE);
+            layoutNoStudents.setVisibility(View.GONE);
             rvStudents.setVisibility(View.VISIBLE);
         }
         studentAdapter.notifyDataSetChanged();

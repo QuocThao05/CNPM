@@ -182,6 +182,8 @@ public class CourseRequestManagementActivity extends AppCompatActivity implement
         // Load trực tiếp với teacherId
         loadRequestsDirectly();
 
+        // TẠM THỜI TẮT RealtimeManager để debug
+        /*
         realtimeManager.listenToCourseRequests(currentTeacherId,
             new RealtimeManager.OnDataChangeListener<CourseRequest>() {
                 @Override
@@ -228,47 +230,63 @@ public class CourseRequestManagementActivity extends AppCompatActivity implement
                     loadRequestsDirectly();
                 }
             });
+        */
     }
 
-    // Method fallback với teacherId
+    // Method fallback với teacherId - chỉ lấy pending requests
     private void loadRequestsDirectly() {
-        Log.d("CourseRequestManagement", "Loading ALL course requests (no teacherId filter)");
+        Log.d("CourseRequestManagement", "Loading PENDING course requests only");
 
         db.collection("courseRequests")
-                .get()  // Bỏ whereEqualTo - lấy TẤT CẢ requests
+                .whereEqualTo("status", "pending")  // Chỉ lấy pending requests
+                .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     requestList.clear();
                     int totalDocs = queryDocumentSnapshots.size();
 
-                    Log.d("CourseRequestManagement", "Found " + totalDocs + " total requests");
+                    Log.d("CourseRequestManagement", "Found " + totalDocs + " pending requests");
 
                     for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
                         CourseRequest request = doc.toObject(CourseRequest.class);
-                        if (request != null) {
+                        if (request != null && "pending".equals(request.getStatus())) {
                             requestList.add(request);
-                            Log.d("CourseRequestManagement", "Added request from: " + request.getStudentName() +
+                            Log.d("CourseRequestManagement", "Added pending request from: " + request.getStudentName() +
                                 " for course: " + request.getCourseName() + " with status: " + request.getStatus());
                         }
                     }
 
-                    Log.d("CourseRequestManagement", "Loaded " + requestList.size() + " requests");
+                    Log.d("CourseRequestManagement", "Loaded " + requestList.size() + " pending requests");
 
                     runOnUiThread(() -> {
+                        // Debug: Kiểm tra adapter và RecyclerView
+                        Log.d("CourseRequestManagement", "Updating adapter with " + requestList.size() + " items");
+                        Log.d("CourseRequestManagement", "RecyclerView is null: " + (recyclerView == null));
+                        Log.d("CourseRequestManagement", "Adapter is null: " + (adapter == null));
+
                         adapter.updateList(requestList);
+                        adapter.notifyDataSetChanged(); // Force update
+
+                        // Debug: Kiểm tra adapter count
+                        Log.d("CourseRequestManagement", "Adapter item count after update: " + adapter.getItemCount());
+
                         if (requestList.isEmpty()) {
-                            Toast.makeText(this, "Không có yêu cầu nào", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(this, "Không có yêu cầu pending nào", Toast.LENGTH_SHORT).show();
                         } else {
-                            Toast.makeText(this, "Hiển thị " + requestList.size() + " yêu cầu", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(this, "Hiển thị " + requestList.size() + " yêu cầu pending", Toast.LENGTH_SHORT).show();
                         }
 
                         // Cập nhật title
                         if (getSupportActionBar() != null) {
-                            getSupportActionBar().setTitle("Tất cả yêu cầu (" + requestList.size() + ")");
+                            getSupportActionBar().setTitle("Yêu cầu tham gia (" + requestList.size() + ")");
                         }
+
+                        // Debug: Force RecyclerView to be visible
+                        recyclerView.setVisibility(android.view.View.VISIBLE);
+                        Log.d("CourseRequestManagement", "RecyclerView visibility set to VISIBLE");
                     });
                 })
                 .addOnFailureListener(e -> {
-                    Log.e("CourseRequestManagement", "Error loading requests", e);
+                    Log.e("CourseRequestManagement", "Error loading pending requests", e);
                     runOnUiThread(() -> {
                         Toast.makeText(this, "Lỗi khi tải dữ liệu: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                     });
@@ -306,6 +324,9 @@ public class CourseRequestManagementActivity extends AppCompatActivity implement
                         db.collection("courseRequests").document(doc.getId())
                                 .update("status", status)
                                 .addOnSuccessListener(aVoid -> {
+                                    // Cập nhật Firebase thành công, giờ cập nhật UI ngay lập tức
+                                    removeRequestFromList(request);
+
                                     Toast.makeText(this,
                                         status.equals("approved") ? "Đã phê duyệt yêu cầu" : "Đã từ chối yêu cầu",
                                         Toast.LENGTH_SHORT).show();
@@ -321,19 +342,55 @@ public class CourseRequestManagementActivity extends AppCompatActivity implement
                 });
     }
 
+    private void removeRequestFromList(CourseRequest request) {
+        // Tìm và loại bỏ request khỏi danh sách
+        for (int i = 0; i < requestList.size(); i++) {
+            CourseRequest item = requestList.get(i);
+            if (item.getStudentId().equals(request.getStudentId()) &&
+                item.getCourseId().equals(request.getCourseId())) {
+
+                // Tạo biến final để sử dụng trong lambda
+                final int indexToRemove = i;
+
+                // Loại bỏ item khỏi danh sách
+                requestList.remove(i);
+
+                // Cập nhật adapter ngay lập tức
+                runOnUiThread(() -> {
+                    adapter.notifyItemRemoved(indexToRemove);
+
+                    // Cập nhật title với số lượng mới
+                    if (getSupportActionBar() != null) {
+                        getSupportActionBar().setTitle("Yêu cầu tham gia (" + requestList.size() + ")");
+                    }
+
+                    // Hiển thị thông báo nếu không còn yêu cầu nào
+                    if (requestList.isEmpty()) {
+                        Toast.makeText(CourseRequestManagementActivity.this, "Đã xử lý hết tất cả yêu cầu", Toast.LENGTH_SHORT).show();
+                    }
+                });
+
+                Log.d("CourseRequestManagement", "Removed request from list - Student: " +
+                      request.getStudentName() + ", Course: " + request.getCourseName());
+                break;
+            }
+        }
+    }
+
     private void createEnrollment(CourseRequest request) {
         Map<String, Object> enrollment = new HashMap<>();
-        enrollment.put("courseId", request.getCourseId());
+        enrollment.put("courseID", request.getCourseId());        // Sửa từ "courseId" thành "courseID"
         enrollment.put("courseName", request.getCourseName());
         enrollment.put("enrollmentDate", new Date());
         enrollment.put("studentEmail", request.getStudentEmail());
-        enrollment.put("studentId", request.getStudentId());
+        enrollment.put("studentID", request.getStudentId());      // Sửa từ "studentId" thành "studentID"
         enrollment.put("fullName", request.getStudentName());
 
         db.collection("enrollments")
                 .add(enrollment)
                 .addOnSuccessListener(documentReference -> {
                     Log.d("CourseRequestManagement", "Enrollment created successfully: " + documentReference.getId());
+                    Log.d("CourseRequestManagement", "Created enrollment - CourseID: " + request.getCourseId() + ", StudentID: " + request.getStudentId() + ", Name: " + request.getStudentName());
                 })
                 .addOnFailureListener(e -> {
                     Log.e("CourseRequestManagement", "Error creating enrollment", e);
