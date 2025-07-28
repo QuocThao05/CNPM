@@ -21,7 +21,7 @@ public class EditTestQuestionAdapter extends RecyclerView.Adapter<EditTestQuesti
         void onQuestionClick(SimpleTestQuestion question);
     }
 
-    public EditTestQuestionAdapter(List<SimpleTestQuestion> questions, 
+    public EditTestQuestionAdapter(List<SimpleTestQuestion> questions,
                                   OnQuestionClickListener editListener,
                                   OnQuestionClickListener deleteListener) {
         this.questions = questions;
@@ -40,21 +40,21 @@ public class EditTestQuestionAdapter extends RecyclerView.Adapter<EditTestQuesti
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         SimpleTestQuestion question = questions.get(position);
-        
+
         holder.tvQuestionNumber.setText("Câu " + (position + 1));
         holder.tvQuestion.setText(question.getQuestion());
-        
-        // Hiển thị các lựa chọn
-        List<String> options = question.getCorrectAnswer();
+
+        // Hiển thị các lựa chọn - SỬA: options là array
+        List<String> options = question.getOptions(); // Sửa từ getCorrectAnswer() thành getOptions()
         if (options != null && options.size() >= 4) {
             holder.tvOptionA.setText("A. " + options.get(0));
             holder.tvOptionB.setText("B. " + options.get(1));
             holder.tvOptionC.setText("C. " + options.get(2));
             holder.tvOptionD.setText("D. " + options.get(3));
         }
-        
-        // Hiển thị đáp án đúng
-        int correctIndex = question.getOptions();
+
+        // Hiển thị đáp án đúng - SỬA: correctAnswer là number
+        int correctIndex = question.getCorrectAnswer(); // Sửa từ getOptions() thành getCorrectAnswer()
         String correctLabel = "";
         switch (correctIndex) {
             case 0: correctLabel = "A"; break;
@@ -62,15 +62,15 @@ public class EditTestQuestionAdapter extends RecyclerView.Adapter<EditTestQuesti
             case 2: correctLabel = "C"; break;
             case 3: correctLabel = "D"; break;
         }
-        holder.tvCorrectAnswer.setText("Đáp án đúng: " + correctLabel);
-        
+        holder.tvCorrectAnswer.setText("Đáp án: " + correctLabel);
+
         // Set click listeners
         holder.btnEdit.setOnClickListener(v -> {
             if (editListener != null) {
                 editListener.onQuestionClick(question);
             }
         });
-        
+
         holder.btnDelete.setOnClickListener(v -> {
             if (deleteListener != null) {
                 deleteListener.onQuestionClick(question);

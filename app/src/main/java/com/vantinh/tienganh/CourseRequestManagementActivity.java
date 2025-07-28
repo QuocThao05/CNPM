@@ -385,6 +385,7 @@ public class CourseRequestManagementActivity extends AppCompatActivity implement
         enrollment.put("studentEmail", request.getStudentEmail());
         enrollment.put("studentID", request.getStudentId());      // Sửa từ "studentId" thành "studentID"
         enrollment.put("fullName", request.getStudentName());
+        enrollment.put("status", "approved");                     // Thêm trường status với giá trị "approved"
 
         db.collection("enrollments")
                 .add(enrollment)

@@ -4,16 +4,16 @@ import java.util.List;
 
 public class SimpleTestQuestion {
     private String documentId;          // ID document Firebase (để edit/delete)
-    private String courseId;            // ID khóa học (trường mới)
-    private List<String> correctAnswer; // Array - 4 đáp án A,B,C,D
-    private int options;                // Number - Index của đáp án đúng (0-3)
+    private String courseId;            // ID khóa học
+    private int correctAnswer;          // Number - Index của đáp án đúng (0-3) - SỬA ĐỔI
+    private List<String> options;       // Array - 4 đáp án A,B,C,D - SỬA ĐỔI
     private String question;            // String - Nội dung câu hỏi
 
     public SimpleTestQuestion() {
         // Empty constructor required for Firestore
     }
 
-    public SimpleTestQuestion(String documentId, String courseId, List<String> correctAnswer, int options, String question) {
+    public SimpleTestQuestion(String documentId, String courseId, int correctAnswer, List<String> options, String question) {
         this.documentId = documentId;
         this.courseId = courseId;
         this.correctAnswer = correctAnswer;
@@ -38,19 +38,19 @@ public class SimpleTestQuestion {
         this.courseId = courseId;
     }
 
-    public List<String> getCorrectAnswer() {
+    public int getCorrectAnswer() {
         return correctAnswer;
     }
 
-    public void setCorrectAnswer(List<String> correctAnswer) {
+    public void setCorrectAnswer(int correctAnswer) {
         this.correctAnswer = correctAnswer;
     }
 
-    public int getOptions() {
+    public List<String> getOptions() {
         return options;
     }
 
-    public void setOptions(int options) {
+    public void setOptions(List<String> options) {
         this.options = options;
     }
 
@@ -67,9 +67,9 @@ public class SimpleTestQuestion {
         return "SimpleTestQuestion{" +
                 "documentId='" + documentId + '\'' +
                 ", courseId='" + courseId + '\'' +
-                ", question='" + question + '\'' +
                 ", correctAnswer=" + correctAnswer +
                 ", options=" + options +
+                ", question='" + question + '\'' +
                 '}';
     }
 }

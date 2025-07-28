@@ -93,7 +93,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="📄 Mô tả khóa học"
+                android:text=" Mô tả khóa học"
                 android:textSize="18sp"
                 android:textStyle="bold"
                 android:layout_marginBottom="12dp" />
@@ -119,7 +119,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="📊 Tiến độ học tập"
+                    android:text=" Tiến độ học tập"
                     android:textSize="18sp"
                     android:textStyle="bold"
                     android:layout_marginBottom="16dp" />
@@ -131,12 +131,28 @@
                     android:layout_marginBottom="12dp">
 
                     <TextView
+                        android:id="@+id/tv_total_lessons"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Tổng số bài: 10"
+                        android:textSize="14sp" />
+
+                    <TextView
                         android:id="@+id/tv_completed_lessons"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:text="Đã học: 5/10 bài"
                         android:textSize="14sp" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="12dp">
 
                     <TextView
                         android:id="@+id/tv_progress_percentage"
@@ -148,101 +164,68 @@
 
                 </LinearLayout>
 
+                <!-- Thêm TextView cho điểm số bài kiểm tra -->
+                <TextView
+                    android:id="@+id/tv_test_score"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Điểm bài kiểm tra: Chưa làm"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:textColor="@android:color/holo_blue_dark"
+                    android:layout_marginBottom="12dp"
+                    android:visibility="gone" />
+
                 <ProgressBar
                     android:id="@+id/progress_bar_completion"
                     style="?android:attr/progressBarStyleHorizontal"
                     android:layout_width="match_parent"
-                    android:layout_height="12dp"
+                    android:layout_height="wrap_content"
                     android:max="100"
                     android:progress="50"
-                    android:layout_marginBottom="12dp" />
-
-                <TextView
-                    android:id="@+id/tv_total_lessons"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Tổng số bài: 10"
-                    android:textSize="14sp"
-                    android:textColor="@android:color/darker_gray" />
-
-            </LinearLayout>
-
-            <!-- Enrollment Info -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:background="@android:color/background_light"
-                android:padding="16dp"
-                android:layout_marginBottom="24dp">
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="ℹ️ Thông tin đăng ký"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    android:layout_marginBottom="12dp" />
+                    android:layout_marginBottom="16dp" />
 
                 <TextView
                     android:id="@+id/tv_enrollment_date"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="📅 Ngày đăng ký: 22/07/2025"
+                    android:text="Ngày đăng ký: 15/01/2025"
                     android:textSize="14sp"
                     android:textColor="@android:color/darker_gray" />
+
+            </LinearLayout>
+
+            <!-- Action Buttons -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginBottom="16dp">
+
+                <Button
+                    android:id="@+id/btn_start_learning"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Bắt đầu học"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:backgroundTint="?attr/colorPrimary"
+                    android:layout_marginBottom="12dp" />
+
+                <Button
+                    android:id="@+id/btn_take_quiz"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Làm bài kiểm tra"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:backgroundTint="@android:color/holo_orange_dark"
+                    android:enabled="false" />
 
             </LinearLayout>
 
         </LinearLayout>
 
     </ScrollView>
-
-    <!-- Action Buttons -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp"
-        android:background="@android:color/background_light">
-
-        <!-- Primary Action Button -->
-        <Button
-            android:id="@+id/btn_start_learning"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="12dp"
-            android:text="🚀 Bắt đầu học"
-            android:textSize="16sp" />
-
-        <!-- Secondary Action Buttons -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
-
-            <Button
-                android:id="@+id/btn_view_lessons"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginEnd="8dp"
-                android:text="📖 Xem bài học"
-                android:textSize="14sp" />
-
-            <Button
-                android:id="@+id/btn_view_progress"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginStart="8dp"
-                android:text="📊 Xem tiến độ"
-                android:textSize="14sp" />
-
-        </LinearLayout>
-
-    </LinearLayout>
 
 </LinearLayout>

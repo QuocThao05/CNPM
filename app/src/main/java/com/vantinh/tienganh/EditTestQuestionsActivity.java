@@ -21,13 +21,13 @@ import java.util.List;
 public class EditTestQuestionsActivity extends AppCompatActivity {
 
     private static final String TAG = "EditTestQuestions";
-
+    
     private Toolbar toolbar;
     private RecyclerView recyclerView;
     private ProgressBar progressBar;
     private TextView tvNoQuestions;
     private EditTestQuestionAdapter adapter;
-
+    
     private FirebaseFirestore db;
     private String courseId;
     private String courseName;
@@ -68,7 +68,7 @@ public class EditTestQuestionsActivity extends AppCompatActivity {
     private void getCourseInfo() {
         courseId = getIntent().getStringExtra("courseId");
         courseName = getIntent().getStringExtra("courseName");
-
+        
         if (courseName != null) {
             getSupportActionBar().setSubtitle(courseName);
         }
@@ -93,17 +93,17 @@ public class EditTestQuestionsActivity extends AppCompatActivity {
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     testQuestions.clear();
-
+                    
                     for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
                         SimpleTestQuestion question = document.toObject(SimpleTestQuestion.class);
                         question.setDocumentId(document.getId()); // Lưu document ID để có thể edit/delete
                         testQuestions.add(question);
-
+                        
                         Log.d(TAG, "Loaded question: " + question.getQuestion());
                     }
 
                     progressBar.setVisibility(View.GONE);
-
+                    
                     if (testQuestions.isEmpty()) {
                         tvNoQuestions.setVisibility(View.VISIBLE);
                         recyclerView.setVisibility(View.GONE);
@@ -120,7 +120,7 @@ public class EditTestQuestionsActivity extends AppCompatActivity {
                     progressBar.setVisibility(View.GONE);
                     tvNoQuestions.setVisibility(View.VISIBLE);
                     tvNoQuestions.setText("Lỗi khi tải danh sách câu hỏi");
-                    Toast.makeText(this, "Lỗi khi tải danh sách câu hỏi: " + e.getMessage(),
+                    Toast.makeText(this, "Lỗi khi tải danh sách câu hỏi: " + e.getMessage(), 
                                  Toast.LENGTH_SHORT).show();
                 });
     }
@@ -149,7 +149,7 @@ public class EditTestQuestionsActivity extends AppCompatActivity {
                     })
                     .addOnFailureListener(e -> {
                         Log.e(TAG, "Error deleting question", e);
-                        Toast.makeText(this, "Lỗi khi xóa câu hỏi: " + e.getMessage(),
+                        Toast.makeText(this, "Lỗi khi xóa câu hỏi: " + e.getMessage(), 
                                      Toast.LENGTH_SHORT).show();
                     });
         }

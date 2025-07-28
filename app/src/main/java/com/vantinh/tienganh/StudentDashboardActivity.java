@@ -26,7 +26,7 @@ public class StudentDashboardActivity extends AppCompatActivity {
     private TextView tvWelcome;
     private BottomNavigationView bottomNavigation;
     private CardView cardVocabulary, cardGrammar, cardListening, cardSpeaking;
-    private Button btnSearchCourses, btnMyCourses, btnStudyProgress, btnQuickQuiz;
+    private Button btnSearchCourses, btnMyCourses, btnFeedback, btnInbox; // Thêm btnInbox
     private Toolbar toolbar;
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
@@ -58,11 +58,12 @@ public class StudentDashboardActivity extends AppCompatActivity {
             cardListening = findViewById(R.id.card_listening);
             cardSpeaking = findViewById(R.id.card_speaking);
 
-            // Buttons
+            // Buttons - Chỉ giữ lại những nút cần thiết
             btnSearchCourses = findViewById(R.id.btn_search_courses);
             btnMyCourses = findViewById(R.id.btn_my_courses);
-            btnStudyProgress = findViewById(R.id.btn_study_progress);
-            btnQuickQuiz = findViewById(R.id.btn_quick_quiz);
+            btnFeedback = findViewById(R.id.btn_feedback); // Khởi tạo btnFeedback
+            btnInbox = findViewById(R.id.btn_inbox); // Thêm nút hộp thư
+            // Bỏ btnStudyProgress và btnQuickQuiz
 
         } catch (Exception e) {
             Toast.makeText(this, "Lỗi khởi tạo giao diện: " + e.getMessage(), Toast.LENGTH_SHORT).show();
@@ -134,7 +135,7 @@ public class StudentDashboardActivity extends AppCompatActivity {
             Toast.makeText(this, "Chức năng luyện nói đang phát triển", Toast.LENGTH_SHORT).show();
         });
 
-        // Course buttons
+        // Course buttons - Chỉ giữ lại những nút cần thiết
         btnSearchCourses.setOnClickListener(v -> {
             startActivity(new Intent(this, StudentCourseSearchActivity.class));
         });
@@ -144,14 +145,17 @@ public class StudentDashboardActivity extends AppCompatActivity {
             startActivity(new Intent(this, StudentMyCoursesActivity.class));
         });
 
-        // Progress buttons
-        btnStudyProgress.setOnClickListener(v -> {
-            startActivity(new Intent(this, StudyProgressActivity.class));
+        btnFeedback.setOnClickListener(v -> {
+            // Navigate to feedback activity
+            startActivity(new Intent(this, StudentFeedbackActivity.class));
         });
 
-        btnQuickQuiz.setOnClickListener(v -> {
-            startActivity(new Intent(this, QuizActivity.class));
+        btnInbox.setOnClickListener(v -> {
+            // Navigate to inbox activity
+            startActivity(new Intent(this, StudentInboxActivity.class));
         });
+
+        // Đã bỏ btnStudyProgress và btnQuickQuiz click listeners
     }
 
     private void loadUserInfo() {

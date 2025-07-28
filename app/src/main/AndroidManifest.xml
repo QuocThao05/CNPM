@@ -58,6 +58,28 @@
         <activity android:name=".StudentCourseLessonsActivity" />
         <activity android:name=".StudentCourseDetailActivity" />
         <activity android:name=".StudentLessonLearningActivity" />
+        <activity
+            android:name=".StudentInboxActivity"
+            android:label="Hộp thư"
+            android:parentActivityName=".StudentDashboardActivity" />
+        <activity
+            android:name=".TeacherFeedbackManagementActivity"
+            android:label="Quản lý phản hồi"
+            android:parentActivityName=".TeacherDashboardActivity" />
+        <activity
+            android:name=".CourseTestActivity"
+            android:label="Bài kiểm tra khóa học"
+            android:parentActivityName=".StudentCourseDetailActivity" />
+        <activity
+            android:name=".StudentFeedbackActivity"
+            android:label="Đánh giá khóa học"
+            android:parentActivityName=".StudentDashboardActivity" />
+
+
+        <!-- Data Migration Tool -->
+        <activity
+            android:name=".DataMigrationActivity"
+            android:label="Data Migration Tool" />
 
 
         <!-- Quiz Management Activities -->

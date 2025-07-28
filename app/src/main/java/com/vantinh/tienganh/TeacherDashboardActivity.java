@@ -19,7 +19,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
 
     private Toolbar toolbar;
     private TextView tvWelcome, tvCoursesCount, tvStudentsCount, tvPendingRequestsCount;
-    private LinearLayout btnManageCourses, btnViewRequests, btnCreateQuiz, btnCreateCourse;
+    private LinearLayout btnManageCourses, btnViewRequests, btnCreateQuiz, btnCreateCourse, btnManageFeedback; // Thêm btnManageFeedback
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
     private RealtimeManager realtimeManager;
@@ -48,6 +48,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         btnViewRequests = findViewById(R.id.btn_view_requests);
         btnCreateQuiz = findViewById(R.id.btn_create_quiz);
         btnCreateCourse = findViewById(R.id.btn_create_course);
+        btnManageFeedback = findViewById(R.id.btn_manage_feedback); // Khởi tạo btnManageFeedback
     }
 
     private void setupToolbar() {
@@ -83,6 +84,12 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             // Truyền teacherId để activity có thể lọc dữ liệu theo giáo viên
             intent.putExtra("teacherId", currentTeacherId);
             startActivity(intent);
+        });
+
+        // Thêm sự kiện click cho btnManageFeedback
+        btnManageFeedback.setOnClickListener(v -> {
+            // Mở activity quản lý phản hồi
+            startActivity(new Intent(this, TeacherFeedbackManagementActivity.class));
         });
     }
 
@@ -267,17 +274,28 @@ public class TeacherDashboardActivity extends AppCompatActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.teacher_toolbar_menu, menu);
+        getMenuInflater().inflate(R.menu.teacher_dashboard_menu, menu);
         return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-        int itemId = item.getItemId();
-        if (itemId == R.id.action_logout) {
-            logout();
+        int id = item.getItemId();
+        
+        if (id == R.id.action_data_migration) {
+            // Mở tool migration dữ liệu
+            Intent intent = new Intent(this, DataMigrationActivity.class);
+            startActivity(intent);
+            return true;
+        } else if (id == R.id.action_logout) {
+            mAuth.signOut();
+            Intent intent = new Intent(this, MainActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+            finish();
             return true;
         }
+        
         return super.onOptionsItemSelected(item);
     }
 

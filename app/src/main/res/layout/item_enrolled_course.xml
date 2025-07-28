@@ -6,10 +6,7 @@
     android:layout_height="wrap_content"
     android:layout_margin="8dp"
     app:cardCornerRadius="12dp"
-    app:cardElevation="6dp"
-    android:foreground="?android:attr/selectableItemBackground"
-    android:clickable="true"
-    android:focusable="true">
+    app:cardElevation="4dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -17,11 +14,12 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- Header với tiêu đề và category -->
+        <!-- Course Title with Progress Percentage -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
+            android:gravity="center_vertical"
             android:layout_marginBottom="8dp">
 
             <TextView
@@ -32,145 +30,105 @@
                 android:text="Course Title"
                 android:textSize="18sp"
                 android:textStyle="bold"
-                android:maxLines="2"
-                android:ellipsize="end" />
+                android:textColor="@android:color/black" />
 
             <TextView
-                android:id="@+id/tv_course_category"
+                android:id="@+id/tv_progress_percentage"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Grammar"
-                android:textSize="12sp"
-                android:textColor="@android:color/white"
-                android:background="@android:drawable/ic_menu_info_details"
-                android:paddingHorizontal="8dp"
-                android:paddingVertical="4dp"
-                android:layout_marginStart="8dp" />
+                android:text="0%"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@android:color/holo_green_dark"
+                android:background="@android:color/holo_green_light"
+                android:padding="8dp"
+                android:minWidth="50dp"
+                android:gravity="center" />
 
         </LinearLayout>
 
-        <!-- Level và Status -->
+        <!-- Course Info -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_marginBottom="12dp">
+            android:layout_marginBottom="8dp">
+
+            <TextView
+                android:id="@+id/tv_course_category"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Category"
+                android:textSize="14sp"
+                android:textColor="@android:color/darker_gray" />
 
             <TextView
                 android:id="@+id/tv_course_level"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Beginner"
+                android:text="Level"
                 android:textSize="14sp"
-                android:drawableStart="@android:drawable/ic_menu_sort_by_size"
-                android:drawablePadding="4dp" />
-
-            <View
-                android:layout_width="0dp"
-                android:layout_height="1dp"
-                android:layout_weight="1" />
-
-            <TextView
-                android:id="@+id/tv_status"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Đang học"
-                android:textSize="14sp"
-                android:textStyle="bold" />
+                android:textColor="@android:color/darker_gray" />
 
         </LinearLayout>
 
-        <!-- Progress Section -->
-        <LinearLayout
+        <!-- Progress Text and Date -->
+        <TextView
+            android:id="@+id/tv_progress_text"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:background="@android:color/background_light"
-            android:padding="12dp"
-            android:layout_marginBottom="12dp">
+            android:text="0/0 bài học"
+            android:textSize="14sp"
+            android:textColor="@android:color/darker_gray"
+            android:layout_marginBottom="4dp" />
 
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="📊 Tiến độ học tập"
-                android:textStyle="bold"
-                android:textSize="14sp"
-                android:layout_marginBottom="8dp" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginBottom="8dp">
-
-                <TextView
-                    android:id="@+id/tv_progress_text"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="5/10 bài học"
-                    android:textSize="12sp" />
-
-                <TextView
-                    android:id="@+id/tv_progress_percentage"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="50% hoàn thành"
-                    android:textSize="12sp"
-                    android:textStyle="bold" />
-
-            </LinearLayout>
-
-            <ProgressBar
-                android:id="@+id/progress_bar_completion"
-                style="?android:attr/progressBarStyleHorizontal"
-                android:layout_width="match_parent"
-                android:layout_height="8dp"
-                android:max="100"
-                android:progress="50" />
-
-        </LinearLayout>
-
-        <!-- Enrollment Date -->
         <TextView
             android:id="@+id/tv_enrollment_date"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="📅 Đăng ký: 22/07/2025"
+            android:text="Đăng ký: N/A"
             android:textSize="12sp"
             android:textColor="@android:color/darker_gray"
-            android:layout_marginBottom="16dp" />
+            android:layout_marginBottom="8dp" />
+
+        <!-- Status -->
+        <TextView
+            android:id="@+id/tv_status"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Đang học"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="12dp" />
 
         <!-- Action Buttons -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="end">
-
-            <Button
-                android:id="@+id/btn_view_progress"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="wrap_content"
-                android:layout_height="36dp"
-                android:layout_marginEnd="8dp"
-                android:text="Xem tiến độ"
-                android:textSize="12sp"
-                android:minWidth="0dp"
-                android:paddingLeft="12dp"
-                android:paddingRight="12dp" />
+            android:orientation="horizontal">
 
             <Button
                 android:id="@+id/btn_continue_learning"
-                android:layout_width="wrap_content"
-                android:layout_height="36dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
                 android:text="Tiếp tục học"
-                android:textSize="12sp"
-                android:minWidth="0dp"
-                android:paddingLeft="12dp"
-                android:paddingRight="12dp" />
+                android:backgroundTint="@android:color/holo_blue_dark"
+                android:textColor="@android:color/white" />
 
         </LinearLayout>
+
+        <!-- Progress Bar để hiển thị tiến độ hoàn thành -->
+        <ProgressBar
+            android:id="@+id/progress_bar_completion"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="8dp"
+            android:layout_marginTop="8dp"
+            android:max="100"
+            android:progress="0"
+            android:progressTint="@android:color/holo_green_dark"
+            android:progressBackgroundTint="@android:color/darker_gray" />
 
     </LinearLayout>
 

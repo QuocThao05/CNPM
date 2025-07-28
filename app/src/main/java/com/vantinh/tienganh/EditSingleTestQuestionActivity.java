@@ -18,13 +18,13 @@ import java.util.List;
 public class EditSingleTestQuestionActivity extends AppCompatActivity {
 
     private static final String TAG = "EditSingleTestQuestion";
-
+    
     private Toolbar toolbar;
     private TextInputEditText etQuestion, etOptionA, etOptionB, etOptionC, etOptionD;
     private RadioGroup rgCorrectAnswer;
     private RadioButton rbOptionA, rbOptionB, rbOptionC, rbOptionD;
     private Button btnSaveQuestion, btnDeleteQuestion;
-
+    
     private FirebaseFirestore db;
     private String courseId, courseName, questionId;
     private SimpleTestQuestion currentQuestion;
@@ -74,7 +74,7 @@ public class EditSingleTestQuestionActivity extends AppCompatActivity {
         courseId = getIntent().getStringExtra("courseId");
         courseName = getIntent().getStringExtra("courseName");
         questionId = getIntent().getStringExtra("questionId");
-
+        
         if (courseName != null) {
             getSupportActionBar().setSubtitle(courseName);
         }
@@ -111,7 +111,7 @@ public class EditSingleTestQuestionActivity extends AppCompatActivity {
                 })
                 .addOnFailureListener(e -> {
                     Log.e(TAG, "Error loading question", e);
-                    Toast.makeText(this, "Lỗi khi tải câu hỏi: " + e.getMessage(),
+                    Toast.makeText(this, "Lỗi khi tải câu hỏi: " + e.getMessage(), 
                                  Toast.LENGTH_SHORT).show();
                     finish();
                 });
@@ -123,8 +123,8 @@ public class EditSingleTestQuestionActivity extends AppCompatActivity {
         // Điền nội dung câu hỏi
         etQuestion.setText(currentQuestion.getQuestion());
 
-        // Điền các lựa chọn
-        List<String> options = currentQuestion.getCorrectAnswer();
+        // Điền các lựa chọn - options là array chứa 4 đáp án
+        List<String> options = currentQuestion.getOptions();
         if (options != null && options.size() >= 4) {
             etOptionA.setText(options.get(0));
             etOptionB.setText(options.get(1));
@@ -132,8 +132,8 @@ public class EditSingleTestQuestionActivity extends AppCompatActivity {
             etOptionD.setText(options.get(3));
         }
 
-        // Chọn đáp án đúng
-        int correctIndex = currentQuestion.getOptions();
+        // Chọn đáp án đúng - correctAnswer là number (index)
+        int correctIndex = currentQuestion.getCorrectAnswer();
         switch (correctIndex) {
             case 0:
                 rbOptionA.setChecked(true);
@@ -166,10 +166,10 @@ public class EditSingleTestQuestionActivity extends AppCompatActivity {
 
         int correctAnswerIndex = getCorrectAnswerIndex();
 
-        // Cập nhật currentQuestion
+        // Cập nhật currentQuestion với cấu trúc đúng
         currentQuestion.setQuestion(questionText);
-        currentQuestion.setCorrectAnswer(options);
-        currentQuestion.setOptions(correctAnswerIndex);
+        currentQuestion.setOptions(options);                    // options là array
+        currentQuestion.setCorrectAnswer(correctAnswerIndex);   // correctAnswer là number
 
         btnSaveQuestion.setEnabled(false);
         btnSaveQuestion.setText("Đang lưu...");

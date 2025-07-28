@@ -161,12 +161,12 @@ public class CreateQuizActivity extends AppCompatActivity implements QuestionVie
             // 3. Lấy options (Number) - index của đáp án đúng (0-3)
             int correctAnswerIndex = getCorrectAnswerIndex(questionData);
             
-            // Tạo SimpleTestQuestion chỉ với 4 trường dữ liệu (thêm courseId)
+            // Tạo SimpleTestQuestion với cấu trúc ĐÚNG
             SimpleTestQuestion simpleQuestion = new SimpleTestQuestion();
-            simpleQuestion.setCourseId(courseId);              // String - ID khóa học (MỚI)
-            simpleQuestion.setCorrectAnswer(correctAnswerArray);     // Array - 4 đáp án
-            simpleQuestion.setOptions(correctAnswerIndex);           // Number - index đáp án đúng
-            simpleQuestion.setQuestion(questionText);                // String - câu hỏi
+            simpleQuestion.setCourseId(courseId);                    // String - ID khóa học
+            simpleQuestion.setOptions(correctAnswerArray);          // SỬA: options là array - 4 đáp án
+            simpleQuestion.setCorrectAnswer(correctAnswerIndex);    // SỬA: correctAnswer là number - index đáp án đúng
+            simpleQuestion.setQuestion(questionText);              // String - câu hỏi
 
             simpleTestQuestions.add(simpleQuestion);
 
@@ -214,11 +214,11 @@ public class CreateQuizActivity extends AppCompatActivity implements QuestionVie
             answers.add("Đáp án B - Câu hỏi " + i);
             answers.add("Đáp án C - Câu hỏi " + i);
             answers.add("Đáp án D - Câu hỏi " + i);
-            question.setCorrectAnswer(answers);
+            question.setOptions(answers);          // SỬA: options là array
 
             // Chọn ngẫu nhiên một đáp án đúng
             int correctIndex = (int) (Math.random() * 4);
-            question.setOptions(correctIndex);
+            question.setCorrectAnswer(correctIndex);  // SỬA: correctAnswer là number
 
             sampleQuestions.add(question);
 

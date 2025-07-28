@@ -19,7 +19,6 @@ public class StudentEnrolledCourseAdapter extends RecyclerView.Adapter<StudentEn
     public interface OnCourseClickListener {
         void onCourseClick(EnrolledCourse enrolledCourse);
         void onContinueLearning(EnrolledCourse enrolledCourse);
-        void onViewProgress(EnrolledCourse enrolledCourse);
     }
 
     public StudentEnrolledCourseAdapter(List<EnrolledCourse> enrolledCourseList, OnCourseClickListener listener) {
@@ -46,6 +45,12 @@ public class StudentEnrolledCourseAdapter extends RecyclerView.Adapter<StudentEn
         return enrolledCourseList.size();
     }
 
+    public void updateList(List<EnrolledCourse> newList) {
+        this.enrolledCourseList.clear();
+        this.enrolledCourseList.addAll(newList);
+        notifyDataSetChanged();
+    }
+
     public class EnrolledCourseViewHolder extends RecyclerView.ViewHolder {
         private CardView cardCourse;
         private TextView tvCourseTitle;
@@ -57,7 +62,6 @@ public class StudentEnrolledCourseAdapter extends RecyclerView.Adapter<StudentEn
         private TextView tvStatus;
         private ProgressBar progressBarCompletion;
         private Button btnContinueLearning;
-        private Button btnViewProgress;
 
         public EnrolledCourseViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -71,7 +75,6 @@ public class StudentEnrolledCourseAdapter extends RecyclerView.Adapter<StudentEn
             tvStatus = itemView.findViewById(R.id.tv_status);
             progressBarCompletion = itemView.findViewById(R.id.progress_bar_completion);
             btnContinueLearning = itemView.findViewById(R.id.btn_continue_learning);
-            btnViewProgress = itemView.findViewById(R.id.btn_view_progress);
 
             // Set up click listeners
             cardCourse.setOnClickListener(v -> {
@@ -85,12 +88,6 @@ public class StudentEnrolledCourseAdapter extends RecyclerView.Adapter<StudentEn
                     listener.onContinueLearning(enrolledCourseList.get(getAdapterPosition()));
                 }
             });
-
-            btnViewProgress.setOnClickListener(v -> {
-                if (listener != null) {
-                    listener.onViewProgress(enrolledCourseList.get(getAdapterPosition()));
-                }
-            });
         }
 
         public void bind(EnrolledCourse enrolledCourse) {
@@ -101,71 +98,43 @@ public class StudentEnrolledCourseAdapter extends RecyclerView.Adapter<StudentEn
             tvCourseCategory.setText(course.getCategory());
             tvCourseLevel.setText(course.getLevel());
 
-            // Set progress info
-            tvProgressText.setText(enrolledCourse.getProgressText());
-            tvProgressPercentage.setText(enrolledCourse.getProgressPercentageText());
-            progressBarCompletion.setProgress(enrolledCourse.getProgress());
+            // Set progress info - hiển thị phần trăm bên cạnh tiêu đề
+            int progress = enrolledCourse.getProgress();
+            int completedLessons = enrolledCourse.getCompletedLessons();
+            int totalLessons = enrolledCourse.getTotalLessons();
+
+            // Hiển thị phần trăm ở bên ngoài
+            tvProgressPercentage.setText(progress + "%");
+
+            // Set màu sắc theo tiến độ
+            if (progress == 100) {
+                tvProgressPercentage.setBackgroundColor(itemView.getContext().getResources().getColor(android.R.color.holo_green_dark));
+                tvProgressPercentage.setTextColor(itemView.getContext().getResources().getColor(android.R.color.white));
+            } else if (progress >= 50) {
+                tvProgressPercentage.setBackgroundColor(itemView.getContext().getResources().getColor(android.R.color.holo_orange_light));
+                tvProgressPercentage.setTextColor(itemView.getContext().getResources().getColor(android.R.color.black));
+            } else {
+                tvProgressPercentage.setBackgroundColor(itemView.getContext().getResources().getColor(android.R.color.holo_red_light));
+                tvProgressPercentage.setTextColor(itemView.getContext().getResources().getColor(android.R.color.white));
+            }
+
+            // Set detailed progress text
+            String progressText = completedLessons + "/" + totalLessons + " bài học";
+            tvProgressText.setText(progressText);
+
+            // Set progress bar
+            progressBarCompletion.setProgress(progress);
 
             // Set enrollment date
-            if (enrolledCourse.getEnrollmentDate() != null && !enrolledCourse.getEnrollmentDate().isEmpty()) {
-                tvEnrollmentDate.setText("Đăng ký: " + enrolledCourse.getEnrollmentDate().substring(0,
-                    Math.min(10, enrolledCourse.getEnrollmentDate().length())));
-            } else {
-                tvEnrollmentDate.setText("Đăng ký: N/A");
-            }
+            tvEnrollmentDate.setText("Ngày đăng ký: " + enrolledCourse.getEnrollmentDate());
 
             // Set status
-            String status = enrolledCourse.getStatus();
-            if ("completed".equals(status)) {
-                tvStatus.setText("Hoàn thành");
-                tvStatus.setTextColor(itemView.getContext().getColor(android.R.color.holo_green_dark));
-                btnContinueLearning.setText("Ôn tập");
-            } else if ("paused".equals(status)) {
-                tvStatus.setText("Tạm dừng");
-                tvStatus.setTextColor(itemView.getContext().getColor(android.R.color.holo_orange_dark));
-                btnContinueLearning.setText("Tiếp tục học");
-            } else {
-                tvStatus.setText("Đang học");
-                tvStatus.setTextColor(itemView.getContext().getColor(android.R.color.holo_blue_dark));
-                btnContinueLearning.setText("Tiếp tục học");
-            }
+            tvStatus.setText("Trạng thái: " + enrolledCourse.getStatus());
 
-            // Enable/disable continue button based on status
-            btnContinueLearning.setEnabled(enrolledCourse.canContinueLearning() || enrolledCourse.isCompleted());
-
-            // Set category-specific styling
-            setCategoryStyle(course.getCategory());
-        }
-
-        private void setCategoryStyle(String category) {
-            int colorResId;
-            switch (category.toLowerCase()) {
-                case "grammar":
-                    colorResId = android.R.color.holo_blue_light;
-                    break;
-                case "vocabulary":
-                    colorResId = android.R.color.holo_green_light;
-                    break;
-                case "listening":
-                    colorResId = android.R.color.holo_orange_light;
-                    break;
-                case "speaking":
-                    colorResId = android.R.color.holo_red_light;
-                    break;
-                case "reading":
-                    colorResId = android.R.color.holo_purple;
-                    break;
-                case "writing":
-                    colorResId = android.R.color.darker_gray;
-                    break;
-                default:
-                    colorResId = android.R.color.holo_blue_light;
-                    break;
-            }
-
-            // Apply subtle background tint based on category
-            cardCourse.setCardBackgroundColor(itemView.getContext().getColor(colorResId));
-            cardCourse.getBackground().setAlpha(30); // Make it subtle
+            // Debug log
+            android.util.Log.d("EnrolledCourseAdapter", "Course: " + course.getTitle() +
+                " - Progress: " + progress + "%" +
+                " - Completed: " + completedLessons + "/" + totalLessons);
         }
     }
 }
