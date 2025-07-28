@@ -104,7 +104,7 @@ public class Lesson {
     public List<String> getGrammarNotes() { return grammarNotes; }
     public void setGrammarNotes(List<String> grammarNotes) { this.grammarNotes = grammarNotes; }
 
-    // Vocabulary-specific getters and setters (for future use)
+    // Vocabulary-specific getters and setters
     public List<String> getVocabularyWords() { return vocabularyWords; }
     public void setVocabularyWords(List<String> vocabularyWords) { this.vocabularyWords = vocabularyWords; }
 
@@ -124,18 +124,54 @@ public class Lesson {
     public boolean isCompleted() { return isCompleted; }
     public void setCompleted(boolean completed) { isCompleted = completed; }
 
-    // Helper methods
-    public String getEstimatedTimeString() {
-        return estimatedTime + " phút";
+    // Helper methods for display
+    public String getTypeDisplayName() {
+        if (type == null) return "📝 Văn bản";
+
+        switch (type.toLowerCase()) {
+            case "text":
+                return "📝 Văn bản";
+            case "video":
+                return "🎥 Video";
+            case "audio":
+                return "🎵 Âm thanh";
+            case "quiz":
+                return "❓ Trắc nghiệm";
+            case "grammar":
+                return "📚 Ngữ pháp";
+            case "vocabulary":
+                return "📖 Từ vựng";
+            default:
+                return "📝 " + type;
+        }
     }
 
-    public String getTypeDisplayName() {
-        switch (type) {
-            case "text": return "Văn bản";
-            case "video": return "Video";
-            case "audio": return "Âm thanh";
-            case "quiz": return "Quiz";
-            default: return "Văn bản";
+    public String getEstimatedTimeString() {
+        if (estimatedTime <= 0) return "⏱ Không xác định";
+
+        if (estimatedTime < 60) {
+            return "⏱ " + estimatedTime + " phút";
+        } else {
+            int hours = estimatedTime / 60;
+            int minutes = estimatedTime % 60;
+            if (minutes == 0) {
+                return "⏱ " + hours + " giờ";
+            } else {
+                return "⏱ " + hours + "h " + minutes + "m";
+            }
         }
+    }
+
+    @Override
+    public String toString() {
+        return "Lesson{" +
+                "id='" + id + '\'' +
+                ", title='" + title + '\'' +
+                ", type='" + type + '\'' +
+                ", category='" + category + '\'' +
+                ", estimatedTime=" + estimatedTime +
+                ", order=" + order +
+                ", isPublished=" + isPublished +
+                '}';
     }
 }

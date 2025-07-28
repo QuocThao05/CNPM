@@ -59,6 +59,10 @@
         <activity android:name=".StudentCourseDetailActivity" />
         <activity android:name=".StudentLessonLearningActivity" />
         <activity
+            android:name=".FavoriteLessonsActivity"
+            android:label="Bài học yêu thích"
+            android:parentActivityName=".StudentDashboardActivity" />
+        <activity
             android:name=".StudentInboxActivity"
             android:label="Hộp thư"
             android:parentActivityName=".StudentDashboardActivity" />

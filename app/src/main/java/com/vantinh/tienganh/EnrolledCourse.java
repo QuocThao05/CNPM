@@ -165,4 +165,15 @@ public class EnrolledCourse {
             return "Chưa bắt đầu";
         }
     }
+
+    @Override
+    public String toString() {
+        return "EnrolledCourse{" +
+                "course=" + (course != null ? course.getTitle() : "null") +
+                ", progress=" + progress +
+                ", completedLessons=" + completedLessons +
+                ", totalLessons=" + totalLessons +
+                ", status='" + status + '\'' +
+                '}';
+    }
 }

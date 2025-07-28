@@ -16,7 +16,9 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class StudentCourseLessonsActivity extends AppCompatActivity implements StudentLessonAdapter.OnLessonClickListener {
 
@@ -80,7 +82,62 @@ public class StudentCourseLessonsActivity extends AppCompatActivity implements S
     }
 
     private void setupRecyclerView() {
-        lessonAdapter = new StudentLessonAdapter(lessonList, this);
+        lessonAdapter = new StudentLessonAdapter(lessonList, new StudentLessonAdapter.OnLessonClickListener() {
+            @Override
+            public void onLessonClick(Lesson lesson) {
+                // Debug logging để kiểm tra dữ liệu
+                android.util.Log.d("StudentCourseLessons", "=== DEBUG LESSON CLICK ===");
+                android.util.Log.d("StudentCourseLessons", "Lesson ID: " + lesson.getId());
+                android.util.Log.d("StudentCourseLessons", "Lesson Title: " + lesson.getTitle());
+                android.util.Log.d("StudentCourseLessons", "Course ID: " + courseId);
+                android.util.Log.d("StudentCourseLessons", "Course Title: " + courseTitle);
+                android.util.Log.d("StudentCourseLessons", "Course Category: " + courseCategory);
+
+                // Kiểm tra dữ liệu trước khi chuyển
+                if (lesson.getId() == null || lesson.getId().isEmpty()) {
+                    Toast.makeText(StudentCourseLessonsActivity.this, "Lỗi: Bài học không có ID hợp lệ", Toast.LENGTH_LONG).show();
+                    android.util.Log.e("StudentCourseLessons", "Lesson ID is null or empty!");
+                    return;
+                }
+
+                if (lesson.getTitle() == null || lesson.getTitle().isEmpty()) {
+                    Toast.makeText(StudentCourseLessonsActivity.this, "Lỗi: Bài học không có tiêu đề", Toast.LENGTH_LONG).show();
+                    android.util.Log.e("StudentCourseLessons", "Lesson title is null or empty!");
+                    return;
+                }
+
+                // Chuyển đến màn hình học bài với đầy đủ thông tin
+                Intent intent = new Intent(StudentCourseLessonsActivity.this, StudentLessonLearningActivity.class);
+                intent.putExtra("lessonId", lesson.getId());
+                intent.putExtra("lessonTitle", lesson.getTitle());
+                intent.putExtra("courseId", courseId);
+                intent.putExtra("courseTitle", courseTitle);
+                intent.putExtra("courseCategory", courseCategory);
+
+                android.util.Log.d("StudentCourseLessons", "Starting StudentLessonLearningActivity with Intent");
+                startActivity(intent);
+            }
+
+            @Override
+            public void onFavoriteChanged(Lesson lesson, boolean isFavorite) {
+                // Log favorite status change
+                android.util.Log.d("StudentCourseLessons",
+                    "Lesson " + lesson.getTitle() + " favorite status changed to: " + isFavorite);
+            }
+
+            @Override
+            public void onLessonCompleted(Lesson lesson) {
+                // Xử lý khi bài học được đánh dấu hoàn thành
+                android.util.Log.d("StudentCourseLessons", "Lesson completed: " + lesson.getTitle());
+
+                // Tính toán và hiển thị tiến độ khóa học cập nhật
+                calculateAndShowCourseProgress();
+
+                // Hiển thị thông báo khuyến khích
+                showCompletionEncouragement(lesson);
+            }
+        }, courseId, courseTitle);
+
         rvLessons.setLayoutManager(new LinearLayoutManager(this));
         rvLessons.setAdapter(lessonAdapter);
     }
@@ -139,78 +196,118 @@ public class StudentCourseLessonsActivity extends AppCompatActivity implements S
             });
     }
 
-    private void loadLessonProgressStatus() {
-        if (mAuth.getCurrentUser() == null || lessonList.isEmpty()) {
-            showLessonsDirectly();
-            return;
-        }
-
-        String studentId = mAuth.getCurrentUser().getUid();
-
-        // Load all progress records for this student and course
-        db.collection("lesson_progress")
-                .whereEqualTo("studentId", studentId)
-                .whereEqualTo("courseId", courseId)
-                .whereEqualTo("isCompleted", true)
-                .get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
-                    // Create a set of completed lesson IDs
-                    java.util.Set<String> completedLessonIds = new java.util.HashSet<>();
-                    for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
-                        String lessonId = document.getString("lessonId");
-                        if (lessonId != null) {
-                            completedLessonIds.add(lessonId);
-                        }
-                    }
-
-                    // Update lesson completion status and accessibility
-                    for (int i = 0; i < lessonList.size(); i++) {
-                        Lesson lesson = lessonList.get(i);
-
-                        // Set completion status
-                        boolean isCompleted = completedLessonIds.contains(lesson.getId());
-                        lesson.setCompleted(isCompleted);
-
-                        // Set accessibility: first lesson is always accessible,
-                        // subsequent lessons are accessible if previous lesson is completed
-                        if (i == 0) {
-                            lesson.setAccessible(true);
-                            lesson.setLocked(false);
-                        } else {
-                            Lesson previousLesson = lessonList.get(i - 1);
-                            boolean isAccessible = previousLesson.isCompleted();
-                            lesson.setAccessible(isAccessible);
-                            lesson.setLocked(!isAccessible);
-                        }
-                    }
-
-                    android.util.Log.d("StudentCourseLessons", "Progress loaded. Completed lessons: " + completedLessonIds.size());
-                    showLessonsDirectly();
-                })
-                .addOnFailureListener(e -> {
-                    android.util.Log.e("StudentCourseLessons", "Error loading lesson progress", e);
-                    // Show lessons without progress status if loading fails
-                    showLessonsDirectly();
-                });
-    }
-
     private void showLessonsDirectly() {
-        android.util.Log.d("StudentCourseLessons", "=== SHOWING LESSONS ===");
-
         if (lessonList.isEmpty()) {
-            android.util.Log.d("StudentCourseLessons", "Lesson list is empty - showing no lessons layout");
             layoutNoLessons.setVisibility(View.VISIBLE);
             rvLessons.setVisibility(View.GONE);
-            Toast.makeText(this, "Khóa học này chưa có bài học nào", Toast.LENGTH_SHORT).show();
         } else {
-            android.util.Log.d("StudentCourseLessons", "Showing " + lessonList.size() + " lessons in RecyclerView");
-
             layoutNoLessons.setVisibility(View.GONE);
             rvLessons.setVisibility(View.VISIBLE);
             lessonAdapter.notifyDataSetChanged();
-
-            Toast.makeText(this, "Đã tải " + lessonList.size() + " bài học", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    private void loadLessonProgressStatus() {
+        if (mAuth.getCurrentUser() == null) return;
+
+        String studentId = mAuth.getCurrentUser().getUid();
+
+        // Load progress for all lessons at once
+        db.collection("lesson_progress")
+                .whereEqualTo("studentId", studentId)
+                .whereEqualTo("courseId", courseId)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    // Create a map of completed lessons for quick lookup
+                    Map<String, Boolean> completedLessons = new HashMap<>();
+                    for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
+                        String lessonId = doc.getString("lessonId");
+                        Boolean isCompleted = doc.getBoolean("isCompleted");
+                        if (lessonId != null && isCompleted != null && isCompleted) {
+                            completedLessons.put(lessonId, true);
+                        }
+                    }
+
+                    // Update lesson completion status
+                    for (Lesson lesson : lessonList) {
+                        lesson.setCompleted(completedLessons.containsKey(lesson.getId()));
+                    }
+
+                    // Refresh adapter
+                    lessonAdapter.notifyDataSetChanged();
+
+                    android.util.Log.d("StudentCourseLessons",
+                        "Loaded progress for " + completedLessons.size() + " completed lessons");
+                })
+                .addOnFailureListener(e -> {
+                    android.util.Log.e("StudentCourseLessons", "Error loading lesson progress", e);
+                });
+    }
+
+    private void calculateAndShowCourseProgress() {
+        if (lessonList.isEmpty()) return;
+
+        int totalLessons = lessonList.size();
+        int completedLessons = 0;
+
+        for (Lesson lesson : lessonList) {
+            if (lesson.isCompleted()) {
+                completedLessons++;
+            }
+        }
+
+        int progressPercentage = totalLessons > 0 ? (completedLessons * 100) / totalLessons : 0;
+
+        // Hiển thị thông báo tiến độ
+        String progressMessage = "📊 Tiến độ khóa học: " + completedLessons + "/" + totalLessons +
+                               " (" + progressPercentage + "% hoàn thành)";
+
+        Toast.makeText(this, progressMessage, Toast.LENGTH_LONG).show();
+
+        // Kiểm tra nếu hoàn thành toàn bộ khóa học
+        if (completedLessons == totalLessons && totalLessons > 0) {
+            showCourseCompletionDialog();
+        }
+
+        android.util.Log.d("StudentCourseLessons", "Course progress: " + progressPercentage + "%");
+    }
+
+    private void showCompletionEncouragement(Lesson lesson) {
+        // Tính số bài học còn lại
+        int remainingLessons = 0;
+        for (Lesson l : lessonList) {
+            if (!l.isCompleted()) {
+                remainingLessons++;
+            }
+        }
+
+        String encouragement;
+        if (remainingLessons == 0) {
+            encouragement = "🎉 Chúc mừng! Bạn đã hoàn thành toàn bộ khóa học!";
+        } else if (remainingLessons == 1) {
+            encouragement = "💪 Tuyệt vời! Chỉ còn 1 bài học nữa để hoàn thành khóa học!";
+        } else {
+            encouragement = "👏 Tốt lắm! Còn " + remainingLessons + " bài học nữa để hoàn thành khóa học!";
+        }
+
+        Toast.makeText(this, encouragement, Toast.LENGTH_LONG).show();
+    }
+
+    private void showCourseCompletionDialog() {
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("🎉 Chúc mừng!")
+                .setMessage("Bạn đã hoàn thành toàn bộ khóa học '" + courseTitle + "'!\n\n" +
+                           "Bạn có thể tiếp tục ôn tập các bài học hoặc tham gia làm bài kiểm tra.")
+                .setPositiveButton("Làm bài kiểm tra", (dialog, which) -> {
+                    // Chuyển đến màn hình làm bài kiểm tra nếu có
+                    Toast.makeText(this, "Chức năng làm bài kiểm tra sẽ được thêm sau", Toast.LENGTH_SHORT).show();
+                })
+                .setNeutralButton("Ôn tập", (dialog, which) -> {
+                    // Giữ nguyên màn hình để ôn tập
+                    dialog.dismiss();
+                })
+                .setNegativeButton("Đóng", (dialog, which) -> dialog.dismiss())
+                .show();
     }
 
     private String currentStudentId;
@@ -248,8 +345,8 @@ public class StudentCourseLessonsActivity extends AppCompatActivity implements S
             return;
         }
 
-        // Load student progress from lessonProgress collection
-        db.collection("lessonProgress")
+        // Load student progress from lesson_progress collection
+        db.collection("lesson_progress")
             .whereEqualTo("studentId", currentStudentId)
             .whereEqualTo("courseId", courseId)
             .get()
@@ -340,6 +437,26 @@ public class StudentCourseLessonsActivity extends AppCompatActivity implements S
     }
 
     @Override
+    public void onFavoriteChanged(Lesson lesson, boolean isFavorite) {
+        // Handle favorite status change
+        String message = isFavorite ? "Đã thêm vào yêu thích" : "Đã xóa khỏi yêu thích";
+        android.util.Log.d("StudentCourseLessons", "Favorite changed: " + lesson.getTitle() + " - " + isFavorite);
+        // Could show a toast or update UI if needed
+    }
+
+    @Override
+    public void onLessonCompleted(Lesson lesson) {
+        // Xử lý khi bài học được đánh dấu hoàn thành
+        android.util.Log.d("StudentCourseLessons", "Lesson completed: " + lesson.getTitle());
+
+        // Tính toán và hiển thị tiến độ khóa học cập nhật
+        calculateAndShowCourseProgress();
+
+        // Hiển thị thông báo khuyến khích
+        showCompletionEncouragement(lesson);
+    }
+
+    @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         if (item.getItemId() == android.R.id.home) {
             finish();
@@ -351,6 +468,9 @@ public class StudentCourseLessonsActivity extends AppCompatActivity implements S
     @Override
     protected void onResume() {
         super.onResume();
-        loadLessons(); // Reload when returning from lesson
+        // Refresh lesson progress when returning to this activity
+        if (lessonAdapter != null && !lessonList.isEmpty()) {
+            loadLessonProgressStatus();
+        }
     }
 }

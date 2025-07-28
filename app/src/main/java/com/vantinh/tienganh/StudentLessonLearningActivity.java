@@ -21,13 +21,13 @@ import java.util.Date;
 
 public class StudentLessonLearningActivity extends AppCompatActivity {
 
-    private ScrollView scrollViewContent;
-    private TextView tvLessonTitle, tvLessonType, tvEstimatedTime;
+    private TextView tvLessonTitle, tvLessonType, tvEstimatedTime, tvLessonOrder;
     private TextView tvLessonContent;
     private LinearLayout layoutGrammarContent;
-    private TextView tvGrammarRule, tvGrammarStructure;
-    private LinearLayout layoutExamples, layoutUsage, layoutNotes;
-    private Button btnMarkCompleted, btnNextLesson, btnPreviousLesson;
+    private TextView tvGrammarRule, tvGrammarExplanation, tvGrammarExamples;
+    private androidx.cardview.widget.CardView cardVocabularyContent;
+    private TextView tvVocabularyWord, tvVocabularyPronunciation, tvVocabularyMeaning, tvVocabularyExample;
+    private Button btnMarkComplete, btnNextLesson, btnPreviousLesson;
     private Toolbar toolbar;
 
     private FirebaseAuth mAuth;
@@ -48,11 +48,29 @@ public class StudentLessonLearningActivity extends AppCompatActivity {
         courseTitle = getIntent().getStringExtra("courseTitle");
         courseCategory = getIntent().getStringExtra("courseCategory");
 
+        // Debug logging để kiểm tra dữ liệu nhận được
+        android.util.Log.d("StudentLessonLearning", "=== DEBUG RECEIVED DATA ===");
+        android.util.Log.d("StudentLessonLearning", "Received lessonId: " + lessonId);
+        android.util.Log.d("StudentLessonLearning", "Received lessonTitle: " + lessonTitle);
+        android.util.Log.d("StudentLessonLearning", "Received courseId: " + courseId);
+        android.util.Log.d("StudentLessonLearning", "Received courseTitle: " + courseTitle);
+        android.util.Log.d("StudentLessonLearning", "Received courseCategory: " + courseCategory);
+
         if (lessonId == null) {
+            android.util.Log.e("StudentLessonLearning", "ERROR: lessonId is null! Finishing activity.");
             Toast.makeText(this, "Lỗi: Không tìm thấy thông tin bài học", Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
+
+        if (lessonId.isEmpty()) {
+            android.util.Log.e("StudentLessonLearning", "ERROR: lessonId is empty! Finishing activity.");
+            Toast.makeText(this, "Lỗi: ID bài học trống", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+
+        android.util.Log.d("StudentLessonLearning", "✅ All data validation passed. Continuing with initialization.");
 
         mAuth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
@@ -66,24 +84,29 @@ public class StudentLessonLearningActivity extends AppCompatActivity {
 
     private void initViews() {
         toolbar = findViewById(R.id.toolbar);
-        scrollViewContent = findViewById(R.id.scroll_view_content);
         tvLessonTitle = findViewById(R.id.tv_lesson_title);
         tvLessonType = findViewById(R.id.tv_lesson_type);
         tvEstimatedTime = findViewById(R.id.tv_estimated_time);
         tvLessonContent = findViewById(R.id.tv_lesson_content);
 
         // Grammar-specific views
-        layoutGrammarContent = findViewById(R.id.layout_grammar_content);
+        layoutGrammarContent = findViewById(R.id.card_grammar_content);
         tvGrammarRule = findViewById(R.id.tv_grammar_rule);
-        tvGrammarStructure = findViewById(R.id.tv_grammar_structure);
-        layoutExamples = findViewById(R.id.layout_examples);
-        layoutUsage = findViewById(R.id.layout_usage);
-        layoutNotes = findViewById(R.id.layout_notes);
+        tvGrammarExplanation = findViewById(R.id.tv_grammar_explanation);
+        tvGrammarExamples = findViewById(R.id.tv_grammar_examples);
+
+        // Vocabulary-specific views
+        cardVocabularyContent = findViewById(R.id.card_vocabulary_content);
+        tvVocabularyWord = findViewById(R.id.tv_vocabulary_word);
+        tvVocabularyPronunciation = findViewById(R.id.tv_vocabulary_pronunciation);
+        tvVocabularyMeaning = findViewById(R.id.tv_vocabulary_meaning);
+        tvVocabularyExample = findViewById(R.id.tv_vocabulary_example);
 
         // Action buttons
-        btnMarkCompleted = findViewById(R.id.btn_mark_completed);
+        btnMarkComplete = findViewById(R.id.btn_mark_complete);
         btnNextLesson = findViewById(R.id.btn_next_lesson);
         btnPreviousLesson = findViewById(R.id.btn_previous_lesson);
+        tvLessonOrder = findViewById(R.id.tv_lesson_order);
     }
 
     private void setupToolbar() {
@@ -95,7 +118,7 @@ public class StudentLessonLearningActivity extends AppCompatActivity {
     }
 
     private void setupClickListeners() {
-        btnMarkCompleted.setOnClickListener(v -> markLessonAsCompleted());
+        btnMarkComplete.setOnClickListener(v -> markLessonAsCompleted());
         btnNextLesson.setOnClickListener(v -> navigateToNextLesson());
         btnPreviousLesson.setOnClickListener(v -> navigateToPreviousLesson());
     }
@@ -149,48 +172,20 @@ public class StudentLessonLearningActivity extends AppCompatActivity {
             tvGrammarRule.setVisibility(View.GONE);
         }
 
-        // Display grammar structure
+        // Display grammar structure (using grammarStructure instead of grammarExplanation)
         if (currentLesson.getGrammarStructure() != null && !currentLesson.getGrammarStructure().isEmpty()) {
-            tvGrammarStructure.setText(currentLesson.getGrammarStructure());
-            tvGrammarStructure.setVisibility(View.VISIBLE);
+            tvGrammarExplanation.setText(currentLesson.getGrammarStructure());
+            tvGrammarExplanation.setVisibility(View.VISIBLE);
         } else {
-            tvGrammarStructure.setVisibility(View.GONE);
+            tvGrammarExplanation.setVisibility(View.GONE);
         }
 
-        // Display examples
-        displayGrammarList(layoutExamples, currentLesson.getGrammarExamples(), "📚 Ví dụ:");
-
-        // Display usage notes
-        displayGrammarList(layoutUsage, currentLesson.getGrammarUsage(), "💡 Cách sử dụng:");
-
-        // Display notes
-        displayGrammarList(layoutNotes, currentLesson.getGrammarNotes(), "📋 Ghi chú:");
-    }
-
-    private void displayGrammarList(LinearLayout container, java.util.List<String> items, String title) {
-        container.removeAllViews();
-
-        if (items != null && !items.isEmpty()) {
-            // Add title
-            TextView titleView = new TextView(this);
-            titleView.setText(title);
-            titleView.setTextSize(16);
-            titleView.setTextColor(getColor(android.R.color.holo_blue_dark));
-            titleView.setPadding(0, 16, 0, 8);
-            container.addView(titleView);
-
-            // Add items
-            for (int i = 0; i < items.size(); i++) {
-                TextView itemView = new TextView(this);
-                itemView.setText((i + 1) + ". " + items.get(i));
-                itemView.setTextSize(14);
-                itemView.setPadding(16, 4, 0, 4);
-                container.addView(itemView);
-            }
-
-            container.setVisibility(View.VISIBLE);
+        // Display grammar examples
+        if (currentLesson.getGrammarExamples() != null && !currentLesson.getGrammarExamples().isEmpty()) {
+            tvGrammarExamples.setText(android.text.TextUtils.join("\n", currentLesson.getGrammarExamples()));
+            tvGrammarExamples.setVisibility(View.VISIBLE);
         } else {
-            container.setVisibility(View.GONE);
+            tvGrammarExamples.setVisibility(View.GONE);
         }
     }
 
@@ -218,9 +213,9 @@ public class StudentLessonLearningActivity extends AppCompatActivity {
                         LessonProgress progress = queryDocumentSnapshots.getDocuments().get(0).toObject(LessonProgress.class);
                         if (progress != null && progress.isCompleted()) {
                             isLessonCompleted = true;
-                            btnMarkCompleted.setText("✅ Đã hoàn thành");
-                            btnMarkCompleted.setEnabled(false);
-                            btnMarkCompleted.setBackgroundColor(getColor(android.R.color.holo_green_light));
+                            btnMarkComplete.setText("✅ Đã hoàn thành");
+                            btnMarkComplete.setEnabled(false);
+                            btnMarkComplete.setBackgroundColor(getColor(android.R.color.holo_green_light));
                         }
                     }
                 })
@@ -243,8 +238,8 @@ public class StudentLessonLearningActivity extends AppCompatActivity {
         String studentId = mAuth.getCurrentUser().getUid();
 
         // Disable button while processing
-        btnMarkCompleted.setEnabled(false);
-        btnMarkCompleted.setText("Đang lưu...");
+        btnMarkComplete.setEnabled(false);
+        btnMarkComplete.setText("Đang lưu...");
 
         // Check if progress record already exists
         db.collection("lesson_progress")
@@ -264,8 +259,8 @@ public class StudentLessonLearningActivity extends AppCompatActivity {
                 })
                 .addOnFailureListener(e -> {
                     android.util.Log.e("StudentLessonLearning", "Error checking lesson progress", e);
-                    btnMarkCompleted.setEnabled(true);
-                    btnMarkCompleted.setText("Đánh dấu hoàn thành");
+                    btnMarkComplete.setEnabled(true);
+                    btnMarkComplete.setText("Đánh dấu hoàn thành");
                     Toast.makeText(this, "Lỗi kiểm tra tiến độ: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }
@@ -284,9 +279,9 @@ public class StudentLessonLearningActivity extends AppCompatActivity {
                 .add(progressData)
                 .addOnSuccessListener(documentReference -> {
                     isLessonCompleted = true;
-                    btnMarkCompleted.setText("✅ Đã hoàn thành");
-                    btnMarkCompleted.setEnabled(false);
-                    btnMarkCompleted.setBackgroundColor(getColor(android.R.color.holo_green_light));
+                    btnMarkComplete.setText("✅ Đã hoàn thành");
+                    btnMarkComplete.setEnabled(false);
+                    btnMarkComplete.setBackgroundColor(getColor(android.R.color.holo_green_light));
 
                     Toast.makeText(this, "Đã đánh dấu hoàn thành bài học!", Toast.LENGTH_SHORT).show();
                     android.util.Log.d("StudentLessonLearning", "Lesson progress created successfully");
@@ -296,8 +291,8 @@ public class StudentLessonLearningActivity extends AppCompatActivity {
                 })
                 .addOnFailureListener(e -> {
                     android.util.Log.e("StudentLessonLearning", "Error creating lesson progress", e);
-                    btnMarkCompleted.setEnabled(true);
-                    btnMarkCompleted.setText("Đánh dấu hoàn thành");
+                    btnMarkComplete.setEnabled(true);
+                    btnMarkComplete.setText("Đánh dấu hoàn thành");
                     Toast.makeText(this, "Lỗi lưu tiến độ: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }
@@ -312,9 +307,9 @@ public class StudentLessonLearningActivity extends AppCompatActivity {
                 .update(updateData)
                 .addOnSuccessListener(aVoid -> {
                     isLessonCompleted = true;
-                    btnMarkCompleted.setText("✅ Đã hoàn thành");
-                    btnMarkCompleted.setEnabled(false);
-                    btnMarkCompleted.setBackgroundColor(getColor(android.R.color.holo_green_light));
+                    btnMarkComplete.setText("✅ Đã hoàn thành");
+                    btnMarkComplete.setEnabled(false);
+                    btnMarkComplete.setBackgroundColor(getColor(android.R.color.holo_green_light));
 
                     Toast.makeText(this, "Đã đánh dấu hoàn thành bài học!", Toast.LENGTH_SHORT).show();
                     android.util.Log.d("StudentLessonLearning", "Lesson progress updated successfully");
@@ -324,8 +319,8 @@ public class StudentLessonLearningActivity extends AppCompatActivity {
                 })
                 .addOnFailureListener(e -> {
                     android.util.Log.e("StudentLessonLearning", "Error updating lesson progress", e);
-                    btnMarkCompleted.setEnabled(true);
-                    btnMarkCompleted.setText("Đánh dấu hoàn thành");
+                    btnMarkComplete.setEnabled(true);
+                    btnMarkComplete.setText("Đánh dấu hoàn thành");
                     Toast.makeText(this, "Lỗi cập nhật tiến độ: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }

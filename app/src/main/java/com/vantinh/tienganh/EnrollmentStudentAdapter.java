@@ -27,7 +27,7 @@ public class EnrollmentStudentAdapter extends RecyclerView.Adapter<EnrollmentStu
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         EnrollmentStudent student = enrollmentStudents.get(position);
-
+        
         holder.tvStudentName.setText(student.getStudentName());
         holder.tvStudentId.setText("ID: " + student.getStudentId());
         holder.tvCourseName.setText(student.getCourseName());
