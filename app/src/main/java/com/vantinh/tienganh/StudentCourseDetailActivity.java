@@ -342,29 +342,63 @@ public class StudentCourseDetailActivity extends AppCompatActivity {
 
     // Method để load dữ liệu test và bắt đầu làm bài kiểm tra
     private void loadTestDataAndStartQuiz() {
-        // SỬA: Không cần kiểm tra trường "test" trong document course nữa
-        // Vì bây giờ dữ liệu test được lưu trong collection "test" riêng biệt
+        android.util.Log.d("StudentCourseDetail", "=== STARTING QUIZ DEBUG ===");
+        android.util.Log.d("StudentCourseDetail", "Course ID: " + courseId);
+        android.util.Log.d("StudentCourseDetail", "Course Title: " + courseTitle);
 
-        android.util.Log.d("StudentCourseDetail", "Starting quiz for courseId: " + courseId);
+        if (courseId == null || courseId.isEmpty()) {
+            Toast.makeText(this, "Lỗi: Không tìm thấy ID khóa học", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
         // Kiểm tra xem có bài kiểm tra nào cho khóa học này không bằng cách query collection "test"
+        android.util.Log.d("StudentCourseDetail", "Querying collection 'test' with courseId: " + courseId);
+
         db.collection("test")
             .whereEqualTo("courseId", courseId)
-            .limit(1) // Chỉ cần kiểm tra có ít nhất 1 câu hỏi
             .get()
             .addOnSuccessListener(queryDocumentSnapshots -> {
+                android.util.Log.d("StudentCourseDetail", "Query successful! Found " + queryDocumentSnapshots.size() + " test documents");
+
                 if (!queryDocumentSnapshots.isEmpty()) {
+                    // Debug: In ra thông tin của các documents tìm được
+                    for (com.google.firebase.firestore.QueryDocumentSnapshot doc : queryDocumentSnapshots) {
+                        android.util.Log.d("StudentCourseDetail", "Test document ID: " + doc.getId());
+                        android.util.Log.d("StudentCourseDetail", "Test document data: " + doc.getData().toString());
+
+                        // Kiểm tra cấu trúc dữ liệu
+                        String question = doc.getString("question");
+                        Object options = doc.get("options"); // Có thể là Array hoặc List
+                        Object correctAnswer = doc.get("correctAnswer"); // Có thể là Number
+
+                        android.util.Log.d("StudentCourseDetail", "Question: " + question);
+                        android.util.Log.d("StudentCourseDetail", "Options type: " + (options != null ? options.getClass().getSimpleName() : "null"));
+                        android.util.Log.d("StudentCourseDetail", "Options: " + options);
+                        android.util.Log.d("StudentCourseDetail", "CorrectAnswer type: " + (correctAnswer != null ? correctAnswer.getClass().getSimpleName() : "null"));
+                        android.util.Log.d("StudentCourseDetail", "CorrectAnswer: " + correctAnswer);
+                    }
+
                     // Có bài kiểm tra, chuyển đến activity làm bài
+                    android.util.Log.d("StudentCourseDetail", "Starting CourseTestActivity...");
                     Intent intent = new Intent(this, CourseTestActivity.class);
                     intent.putExtra("courseId", courseId);
                     intent.putExtra("courseTitle", courseTitle);
-                    startActivity(intent);
+
+                    try {
+                        startActivity(intent);
+                        android.util.Log.d("StudentCourseDetail", "CourseTestActivity started successfully");
+                    } catch (Exception e) {
+                        android.util.Log.e("StudentCourseDetail", "Error starting CourseTestActivity", e);
+                        Toast.makeText(this, "Lỗi khởi chạy bài kiểm tra: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
                 } else {
+                    android.util.Log.w("StudentCourseDetail", "No test documents found for courseId: " + courseId);
                     Toast.makeText(this, "Khóa học này chưa có bài kiểm tra", Toast.LENGTH_SHORT).show();
                 }
             })
             .addOnFailureListener(e -> {
-                android.util.Log.e("StudentCourseDetail", "Error checking test data", e);
+                android.util.Log.e("StudentCourseDetail", "Error querying test collection", e);
+                android.util.Log.e("StudentCourseDetail", "Error details: " + e.getMessage());
                 Toast.makeText(this, "Lỗi kiểm tra bài kiểm tra: " + e.getMessage(), Toast.LENGTH_SHORT).show();
             });
     }

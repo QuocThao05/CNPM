@@ -125,7 +125,7 @@ public class CourseStudentsActivity extends AppCompatActivity {
                 // TODO: Implement messaging functionality
                 Toast.makeText(CourseStudentsActivity.this, "Chức năng nhắn tin đang phát triển", Toast.LENGTH_SHORT).show();
             }
-        });
+        }, courseId); // Thêm courseId vào constructor
         rvStudents.setLayoutManager(new LinearLayoutManager(this));
         rvStudents.setAdapter(studentAdapter);
     }

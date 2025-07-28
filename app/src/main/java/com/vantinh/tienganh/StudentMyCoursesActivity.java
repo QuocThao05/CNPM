@@ -212,128 +212,79 @@ public class StudentMyCoursesActivity extends AppCompatActivity implements Stude
         android.util.Log.d("StudentMyCourses", "=== CALCULATING REAL PROGRESS ===");
         android.util.Log.d("StudentMyCourses", "CourseId: " + courseId + ", StudentId: " + studentId);
 
-        // Đầu tiên load tổng số lessons
-        loadTotalLessons(courseId, enrolledCourse, studentId);
-    }
-
-    private void loadTotalLessons(String courseId, EnrolledCourse enrolledCourse, String studentId) {
-        // Thử cách 1: lessons subcollection trong course
-        db.collection("courses").document(courseId).collection("lessons")
+        // Đầu tiên load tổng số lessons - sử dụng cách đơn giản hơn
+        db.collection("lessons")
+                .whereEqualTo("courseId", courseId)
                 .get()
                 .addOnSuccessListener(lessonsSnapshot -> {
                     int totalLessons = lessonsSnapshot.size();
-                    android.util.Log.d("StudentMyCourses", "Method 1 - Total lessons: " + totalLessons);
+                    android.util.Log.d("StudentMyCourses", "Total lessons found: " + totalLessons);
 
                     if (totalLessons > 0) {
-                        loadCompletedLessons(courseId, enrolledCourse, studentId, totalLessons);
-                    } else {
-                        // Thử cách 2: lessons collection với filter courseId
-                        db.collection("lessons")
+                        // Load completed lessons từ lesson_progress
+                        db.collection("lesson_progress")
+                                .whereEqualTo("studentId", studentId)
                                 .whereEqualTo("courseId", courseId)
+                                .whereEqualTo("isCompleted", true)
                                 .get()
-                                .addOnSuccessListener(altLessons -> {
-                                    int altTotal = altLessons.size();
-                                    android.util.Log.d("StudentMyCourses", "Method 2 - Total lessons: " + altTotal);
+                                .addOnSuccessListener(progressSnapshot -> {
+                                    int completedLessons = progressSnapshot.size();
+                                    int progressPercentage = (completedLessons * 100) / totalLessons;
 
-                                    if (altTotal > 0) {
-                                        loadCompletedLessons(courseId, enrolledCourse, studentId, altTotal);
-                                    } else {
-                                        // Không tìm thấy lessons, set default và update UI
-                                        setDefaultProgress(enrolledCourse);
-                                        updateUIForCourse(enrolledCourse);
-                                    }
+                                    android.util.Log.d("StudentMyCourses",
+                                        "Progress calculated: " + completedLessons + "/" + totalLessons + " = " + progressPercentage + "%");
+
+                                    // Cập nhật thông tin EnrolledCourse
+                                    enrolledCourse.setTotalLessons(totalLessons);
+                                    enrolledCourse.setCompletedLessons(completedLessons);
+                                    enrolledCourse.setProgress(progressPercentage);
+
+                                    // Cập nhật UI ngay lập tức
+                                    runOnUiThread(() -> {
+                                        if (courseAdapter != null) {
+                                            courseAdapter.notifyDataSetChanged();
+                                            android.util.Log.d("StudentMyCourses", "UI updated for course: " +
+                                                enrolledCourse.getCourse().getTitle() + " - " + progressPercentage + "%");
+                                        }
+                                    });
                                 })
                                 .addOnFailureListener(e -> {
-                                    android.util.Log.e("StudentMyCourses", "Error in method 2", e);
-                                    setDefaultProgress(enrolledCourse);
-                                    updateUIForCourse(enrolledCourse);
+                                    android.util.Log.e("StudentMyCourses", "Error loading progress", e);
+                                    // Set default progress nếu có lỗi
+                                    enrolledCourse.setTotalLessons(totalLessons);
+                                    enrolledCourse.setCompletedLessons(0);
+                                    enrolledCourse.setProgress(0);
+                                    runOnUiThread(() -> {
+                                        if (courseAdapter != null) {
+                                            courseAdapter.notifyDataSetChanged();
+                                        }
+                                    });
                                 });
-                    }
-                })
-                .addOnFailureListener(e -> {
-                    android.util.Log.e("StudentMyCourses", "Error in method 1", e);
-                    setDefaultProgress(enrolledCourse);
-                    updateUIForCourse(enrolledCourse);
-                });
-    }
-
-    private void loadCompletedLessons(String courseId, EnrolledCourse enrolledCourse, String studentId, int totalLessons) {
-        android.util.Log.d("StudentMyCourses", "Loading completed lessons for course: " + courseId);
-        android.util.Log.d("StudentMyCourses", "Student ID: " + studentId);
-        android.util.Log.d("StudentMyCourses", "Total lessons: " + totalLessons);
-
-        // Thử collection chính: lesson_progress với field isCompleted
-        tryProgressCollection(courseId, enrolledCourse, studentId, totalLessons, "lesson_progress", "isCompleted");
-    }
-
-    private void tryProgressCollection(String courseId, EnrolledCourse enrolledCourse, String studentId,
-                                     int totalLessons, String collectionName, String completedField) {
-        android.util.Log.d("StudentMyCourses", "Trying collection: " + collectionName + " with field: " + completedField);
-
-        db.collection(collectionName)
-                .whereEqualTo("studentId", studentId)
-                .whereEqualTo("courseId", courseId)
-                .whereEqualTo(completedField, true)
-                .get()
-                .addOnSuccessListener(progressSnapshot -> {
-                    int completedLessons = progressSnapshot.size();
-                    android.util.Log.d("StudentMyCourses", "Found " + completedLessons + " completed lessons in " + collectionName);
-
-                    if (completedLessons > 0 || collectionName.equals("lesson_progress")) {
-                        // Có dữ liệu hoặc đây là collection chính
-                        int progressPercentage = totalLessons > 0 ? (completedLessons * 100) / totalLessons : 0;
-
-                        android.util.Log.d("StudentMyCourses",
-                            "Final Progress: " + completedLessons + "/" + totalLessons + " = " + progressPercentage + "%");
-
-                        // Cập nhật thông tin
-                        enrolledCourse.setTotalLessons(totalLessons);
-                        enrolledCourse.setCompletedLessons(completedLessons);
-                        enrolledCourse.setProgress(progressPercentage);
-
-                        // Cập nhật UI ngay lập tức
-                        updateUIForCourse(enrolledCourse);
                     } else {
-                        // Thử collection khác nếu lesson_progress không có dữ liệu
-                        if (collectionName.equals("lesson_progress")) {
-                            tryProgressCollection(courseId, enrolledCourse, studentId, totalLessons, "lessonProgress", "completed");
-                        } else if (collectionName.equals("lessonProgress")) {
-                            tryProgressCollection(courseId, enrolledCourse, studentId, totalLessons, "studentProgress", "completed");
-                        } else {
-                            // Đã thử hết, set default
-                            android.util.Log.w("StudentMyCourses", "No progress data found, setting default");
-                            enrolledCourse.setTotalLessons(totalLessons);
-                            enrolledCourse.setCompletedLessons(0);
-                            enrolledCourse.setProgress(0);
-                            updateUIForCourse(enrolledCourse);
-                        }
-                    }
-                })
-                .addOnFailureListener(e -> {
-                    android.util.Log.e("StudentMyCourses", "Error loading " + collectionName, e);
-
-                    // Thử collection tiếp theo
-                    if (collectionName.equals("lesson_progress")) {
-                        tryProgressCollection(courseId, enrolledCourse, studentId, totalLessons, "lessonProgress", "completed");
-                    } else if (collectionName.equals("lessonProgress")) {
-                        tryProgressCollection(courseId, enrolledCourse, studentId, totalLessons, "studentProgress", "completed");
-                    } else {
-                        // Set default nếu tất cả fail
-                        enrolledCourse.setTotalLessons(totalLessons);
+                        android.util.Log.w("StudentMyCourses", "No lessons found for course: " + courseId);
+                        // Không có lessons, set default
+                        enrolledCourse.setTotalLessons(0);
                         enrolledCourse.setCompletedLessons(0);
                         enrolledCourse.setProgress(0);
-                        updateUIForCourse(enrolledCourse);
+                        runOnUiThread(() -> {
+                            if (courseAdapter != null) {
+                                courseAdapter.notifyDataSetChanged();
+                            }
+                        });
                     }
+                })
+                .addOnFailureListener(e -> {
+                    android.util.Log.e("StudentMyCourses", "Error loading lessons", e);
+                    // Set default nếu có lỗi
+                    enrolledCourse.setTotalLessons(0);
+                    enrolledCourse.setCompletedLessons(0);
+                    enrolledCourse.setProgress(0);
+                    runOnUiThread(() -> {
+                        if (courseAdapter != null) {
+                            courseAdapter.notifyDataSetChanged();
+                        }
+                    });
                 });
-    }
-
-    private void setDefaultProgress(EnrolledCourse enrolledCourse) {
-        android.util.Log.w("StudentMyCourses", "Setting default progress for: " +
-            enrolledCourse.getCourse().getTitle());
-
-        enrolledCourse.setTotalLessons(0);
-        enrolledCourse.setCompletedLessons(0);
-        enrolledCourse.setProgress(0);
     }
 
     private void updateUIForCourse(EnrolledCourse enrolledCourse) {
@@ -378,11 +329,43 @@ public class StudentMyCoursesActivity extends AppCompatActivity implements Stude
     @Override
     public void onContinueLearning(EnrolledCourse enrolledCourse) {
         // Chuyển đến màn hình học bài đầu tiên chưa hoàn thành
-        Intent intent = new Intent(this, StudentCourseLessonsActivity.class);
-        intent.putExtra("courseId", enrolledCourse.getCourse().getId()); // Sửa từ "course_id" thành "courseId"
-        intent.putExtra("courseTitle", enrolledCourse.getCourse().getTitle()); // Sửa từ "course_title" thành "courseTitle"
-        intent.putExtra("courseCategory", enrolledCourse.getCourse().getCategory());
+        Intent intent = new Intent(this, StudentCourseDetailActivity.class);
+        intent.putExtra("course_id", enrolledCourse.getCourse().getId());
+        intent.putExtra("course_title", enrolledCourse.getCourse().getTitle());
         startActivity(intent);
+    }
+
+    private void debugFirebaseData(String studentId) {
+        android.util.Log.d("StudentMyCourses", "=== DEBUG FIREBASE DATA ===");
+        android.util.Log.d("StudentMyCourses", "Student ID: " + studentId);
+
+        // Debug enrollments
+        db.collection("enrollments")
+                .whereEqualTo("studentID", studentId)
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    android.util.Log.d("StudentMyCourses", "Total enrollments: " + querySnapshot.size());
+                    for (com.google.firebase.firestore.QueryDocumentSnapshot doc : querySnapshot) {
+                        String status = doc.getString("status");
+                        String courseId = doc.getString("courseID");
+                        android.util.Log.d("StudentMyCourses", "Enrollment - CourseID: " + courseId + ", Status: " + status);
+                    }
+                })
+                .addOnFailureListener(e -> android.util.Log.e("StudentMyCourses", "Error debugging enrollments", e));
+
+        // Debug lesson_progress
+        db.collection("lesson_progress")
+                .whereEqualTo("studentId", studentId)
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    android.util.Log.d("StudentMyCourses", "Total lesson_progress records: " + querySnapshot.size());
+                    for (com.google.firebase.firestore.QueryDocumentSnapshot doc : querySnapshot) {
+                        String courseId = doc.getString("courseId");
+                        Boolean isCompleted = doc.getBoolean("isCompleted");
+                        android.util.Log.d("StudentMyCourses", "Progress - CourseID: " + courseId + ", Completed: " + isCompleted);
+                    }
+                })
+                .addOnFailureListener(e -> android.util.Log.e("StudentMyCourses", "Error debugging lesson_progress", e));
     }
 
     @Override
@@ -397,49 +380,9 @@ public class StudentMyCoursesActivity extends AppCompatActivity implements Stude
     @Override
     protected void onResume() {
         super.onResume();
-        // Reload dữ liệu khi quay lại màn hình này
+        // Reload dữ liệu khi quay lại activity để cập nhật tiến độ mới nhất
         if (currentStudentId != null) {
             loadEnrolledCourses();
-        }
-    }
-
-    // Thêm method debug để kiểm tra dữ liệu Firebase
-    private void debugFirebaseData(String studentId) {
-        android.util.Log.d("StudentMyCourses", "=== DEBUG FIREBASE DATA ===");
-        android.util.Log.d("StudentMyCourses", "Current studentId: " + studentId);
-
-        // Debug: Kiểm tra enrollments
-        db.collection("enrollments")
-                .whereEqualTo("studentID", studentId)
-                .get()
-                .addOnSuccessListener(enrollments -> {
-                    android.util.Log.d("StudentMyCourses", "Total enrollments: " + enrollments.size());
-                    for (com.google.firebase.firestore.QueryDocumentSnapshot doc : enrollments) {
-                        String status = doc.getString("status");
-                        String courseId = doc.getString("courseID");
-                        android.util.Log.d("StudentMyCourses", "Enrollment - CourseID: " + courseId + ", Status: " + status);
-                    }
-                });
-
-        // Debug: Kiểm tra các collection progress
-        String[] collections = {"lessonProgress", "studentProgress", "lesson_progress"};
-        for (String collection : collections) {
-            db.collection(collection)
-                    .whereEqualTo("studentId", studentId)
-                    .get()
-                    .addOnSuccessListener(progress -> {
-                        android.util.Log.d("StudentMyCourses", collection + " - Total records: " + progress.size());
-                        for (com.google.firebase.firestore.QueryDocumentSnapshot doc : progress) {
-                            String courseId = doc.getString("courseId");
-                            Object completed = doc.get("completed");
-                            Object isCompleted = doc.get("isCompleted");
-                            android.util.Log.d("StudentMyCourses", collection + " - CourseID: " + courseId +
-                                ", completed: " + completed + ", isCompleted: " + isCompleted);
-                        }
-                    })
-                    .addOnFailureListener(e -> {
-                        android.util.Log.e("StudentMyCourses", "Error checking " + collection, e);
-                    });
         }
     }
 }

@@ -12,46 +12,28 @@
         android:textSize="24sp"
         android:textStyle="bold"
         android:gravity="center"
-        android:layout_marginBottom="24dp" />
-
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Tool này sẽ giúp cập nhật dữ liệu enrollments trong Firebase để thêm trường 'status' cho các enrollment hiện có."
-        android:textSize="16sp"
-        android:layout_marginBottom="24dp" />
-
-    <Button
-        android:id="@+id/btn_check_enrollments"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Kiểm tra dữ liệu Enrollments"
-        android:layout_marginBottom="16dp"
-        android:backgroundTint="@android:color/holo_blue_dark"
-        android:textColor="@android:color/white" />
+        android:layout_marginBottom="32dp" />
 
     <Button
         android:id="@+id/btn_migrate_enrollments"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Cập nhật dữ liệu (Thêm trường status)"
-        android:layout_marginBottom="24dp"
-        android:backgroundTint="@android:color/holo_green_dark"
-        android:textColor="@android:color/white" />
+        android:text="Migrate Enrollments"
+        android:layout_marginBottom="16dp" />
 
-    <ScrollView
+    <Button
+        android:id="@+id/btn_check_enrollments"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1">
+        android:layout_height="wrap_content"
+        android:text="Check Enrollments"
+        android:layout_marginBottom="16dp" />
 
-        <TextView
-            android:id="@+id/tv_status"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Nhấn 'Kiểm tra dữ liệu' để bắt đầu..."
-            android:textSize="14sp"
-            android:padding="8dp" />
-
-    </ScrollView>
+    <TextView
+        android:id="@+id/tv_status"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Ready to migrate"
+        android:textSize="16sp"
+        android:gravity="center" />
 
 </LinearLayout>

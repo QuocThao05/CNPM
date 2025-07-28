@@ -8,6 +8,7 @@ public class CourseStudent {
     private String studentEmail;
     private Date enrollmentDate;
     private String enrollmentId;
+    private String status; // Thêm field status
     private int totalQuizzes;
     private int completedQuizzes;
     private double averageScore;
@@ -21,6 +22,7 @@ public class CourseStudent {
         this.studentId = studentId;
         this.studentName = studentName;
         this.studentEmail = studentEmail;
+        this.status = "approved"; // Default status
     }
 
     // Getters and Setters
@@ -62,6 +64,14 @@ public class CourseStudent {
 
     public void setEnrollmentId(String enrollmentId) {
         this.enrollmentId = enrollmentId;
+    }
+
+    public String getStatus() { // Thêm getter cho status
+        return status;
+    }
+
+    public void setStatus(String status) { // Thêm setter cho status
+        this.status = status;
     }
 
     public int getTotalQuizzes() {

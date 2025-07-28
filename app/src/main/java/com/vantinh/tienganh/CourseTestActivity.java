@@ -77,13 +77,65 @@ public class CourseTestActivity extends AppCompatActivity {
     private void getIntentData() {
         Intent intent = getIntent();
         courseId = intent.getStringExtra("courseId");
-        courseName = intent.getStringExtra("courseName");
-        studentId = intent.getStringExtra("studentId");
+        courseName = intent.getStringExtra("courseTitle"); // Sửa từ "courseName" thành "courseTitle"
 
-        if (courseId == null || studentId == null) {
-            Toast.makeText(this, "Dữ liệu không hợp lệ", Toast.LENGTH_SHORT).show();
+        android.util.Log.d("CourseTestActivity", "Intent data received:");
+        android.util.Log.d("CourseTestActivity", "CourseId: " + courseId);
+        android.util.Log.d("CourseTestActivity", "CourseName: " + courseName);
+
+        if (courseId == null) {
+            Toast.makeText(this, "Không tìm thấy thông tin khóa học", Toast.LENGTH_SHORT).show();
             finish();
+            return;
         }
+
+        // Lấy studentId từ Firebase Auth và users collection
+        getCurrentStudentId();
+    }
+
+    private void getCurrentStudentId() {
+        if (mAuth.getCurrentUser() == null) {
+            Toast.makeText(this, "Vui lòng đăng nhập", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+
+        String firebaseUid = mAuth.getCurrentUser().getUid();
+        android.util.Log.d("CourseTestActivity", "Getting student info for UID: " + firebaseUid);
+
+        db.collection("users").document(firebaseUid)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        studentId = documentSnapshot.getString("id");
+                        String userRole = documentSnapshot.getString("role");
+
+                        android.util.Log.d("CourseTestActivity", "Student ID: " + studentId);
+                        android.util.Log.d("CourseTestActivity", "User Role: " + userRole);
+
+                        if (!"student".equals(userRole)) {
+                            Toast.makeText(this, "Chỉ học viên mới có thể làm bài kiểm tra", Toast.LENGTH_SHORT).show();
+                            finish();
+                            return;
+                        }
+
+                        if (studentId != null) {
+                            // Bây giờ đã có đủ thông tin, load dữ liệu test
+                            loadTestData();
+                        } else {
+                            Toast.makeText(this, "Không tìm thấy thông tin học viên", Toast.LENGTH_SHORT).show();
+                            finish();
+                        }
+                    } else {
+                        Toast.makeText(this, "Không tìm thấy thông tin người dùng", Toast.LENGTH_SHORT).show();
+                        finish();
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    android.util.Log.e("CourseTestActivity", "Error loading user info", e);
+                    Toast.makeText(this, "Lỗi tải thông tin: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    finish();
+                });
     }
 
     private void setupToolbar() {
@@ -124,52 +176,107 @@ public class CourseTestActivity extends AppCompatActivity {
     private void loadTestData() {
         if (courseId == null) return;
 
-        android.util.Log.d("CourseTest", "Loading test data for course: " + courseId);
+        android.util.Log.d("CourseTestActivity", "Loading test data for course: " + courseId);
 
-        db.collection("courses").document(courseId)
+        // Load dữ liệu test từ collection "test" riêng biệt (không phải từ trường "test" trong course)
+        db.collection("test")
+                .whereEqualTo("courseId", courseId)
                 .get()
-                .addOnSuccessListener(documentSnapshot -> {
-                    if (documentSnapshot.exists()) {
-                        List<Map<String, Object>> testData = (List<Map<String, Object>>) documentSnapshot.get("test");
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    if (!queryDocumentSnapshots.isEmpty()) {
+                        testQuestions.clear();
+                        android.util.Log.d("CourseTestActivity", "Found " + queryDocumentSnapshots.size() + " test questions");
 
-                        if (testData != null && !testData.isEmpty()) {
-                            testQuestions.clear();
-
-                            for (Map<String, Object> questionData : testData) {
+                        for (com.google.firebase.firestore.QueryDocumentSnapshot doc : queryDocumentSnapshots) {
+                            try {
                                 TestQuestion question = new TestQuestion();
-                                question.setQuestion((String) questionData.get("question"));
 
-                                // Sửa lại theo đúng cấu trúc: options là array, correctAnswer là number
-                                List<String> options = (List<String>) questionData.get("options");
-                                if (options != null) {
+                                String questionText = doc.getString("question");
+                                question.setQuestion(questionText);
+
+                                // Xử lý options và correctAnswer với validation
+                                Object optionsObj = doc.get("options");
+                                Object correctAnswerObj = doc.get("correctAnswer");
+
+                                android.util.Log.d("CourseTestActivity", "Processing question: " + questionText);
+                                android.util.Log.d("CourseTestActivity", "Options type: " + (optionsObj != null ? optionsObj.getClass().getSimpleName() : "null"));
+                                android.util.Log.d("CourseTestActivity", "CorrectAnswer type: " + (correctAnswerObj != null ? correctAnswerObj.getClass().getSimpleName() : "null"));
+
+                                // Sử dụng logic để khắc phục dữ liệu bị nhầm lẫn
+                                List<String> options = null;
+                                Integer correctAnswer = null;
+
+                                // Case 1: options là ArrayList và correctAnswer là Number (đúng)
+                                if (optionsObj instanceof List && correctAnswerObj instanceof Number) {
+                                    options = (List<String>) optionsObj;
+                                    correctAnswer = ((Number) correctAnswerObj).intValue();
+                                    android.util.Log.d("CourseTestActivity", "Case 1: Correct data structure");
+                                }
+                                // Case 2: options là Number và correctAnswer là ArrayList (bị nhầm - cần hoán đổi)
+                                else if (optionsObj instanceof Number && correctAnswerObj instanceof List) {
+                                    options = (List<String>) correctAnswerObj; // Hoán đổi
+                                    correctAnswer = ((Number) optionsObj).intValue(); // Hoán đổi
+                                    android.util.Log.d("CourseTestActivity", "Case 2: Swapped data - correcting...");
+                                }
+                                // Case 3: options là String và correctAnswer là Number
+                                else if (optionsObj instanceof String && correctAnswerObj instanceof Number) {
+                                    // Tạo options từ String (có thể là JSON)
+                                    String optionsStr = (String) optionsObj;
+                                    try {
+                                        // Thử parse nếu là JSON array
+                                        if (optionsStr.startsWith("[") && optionsStr.endsWith("]")) {
+                                            optionsStr = optionsStr.substring(1, optionsStr.length() - 1);
+                                            String[] optionArray = optionsStr.split(",");
+                                            options = new ArrayList<>();
+                                            for (String opt : optionArray) {
+                                                options.add(opt.trim().replace("\"", ""));
+                                            }
+                                        } else {
+                                            // Single option
+                                            options = new ArrayList<>();
+                                            options.add(optionsStr);
+                                        }
+                                    } catch (Exception e) {
+                                        android.util.Log.e("CourseTestActivity", "Error parsing options string", e);
+                                        options = new ArrayList<>();
+                                        options.add(optionsStr);
+                                    }
+                                    correctAnswer = ((Number) correctAnswerObj).intValue();
+                                    android.util.Log.d("CourseTestActivity", "Case 3: String options converted");
+                                }
+
+                                // Validation
+                                if (options != null && !options.isEmpty() && correctAnswer != null) {
                                     question.setOptions(options);
+                                    question.setCorrectAnswer(correctAnswer);
+                                    testQuestions.add(question);
+
+                                    android.util.Log.d("CourseTestActivity", "Added question: " + questionText);
+                                    android.util.Log.d("CourseTestActivity", "Options: " + options);
+                                    android.util.Log.d("CourseTestActivity", "Correct answer: " + correctAnswer);
+                                } else {
+                                    android.util.Log.w("CourseTestActivity", "Skipping invalid question: " + questionText);
                                 }
 
-                                Object correctAnswerObj = questionData.get("correctAnswer");
-                                if (correctAnswerObj instanceof Number) {
-                                    question.setCorrectAnswer(((Number) correctAnswerObj).intValue());
-                                }
-
-                                testQuestions.add(question);
+                            } catch (Exception e) {
+                                android.util.Log.e("CourseTestActivity", "Error processing question document: " + doc.getId(), e);
                             }
+                        }
 
-                            if (!testQuestions.isEmpty()) {
-                                startTest();
-                            } else {
-                                Toast.makeText(this, "Không có câu hỏi nào trong bài kiểm tra", Toast.LENGTH_SHORT).show();
-                                finish();
-                            }
+                        if (!testQuestions.isEmpty()) {
+                            android.util.Log.d("CourseTestActivity", "Successfully loaded " + testQuestions.size() + " questions");
+                            startTest();
                         } else {
-                            Toast.makeText(this, "Khóa học này chưa có bài kiểm tra", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(this, "Không có câu hỏi hợp lệ trong bài kiểm tra", Toast.LENGTH_SHORT).show();
                             finish();
                         }
                     } else {
-                        Toast.makeText(this, "Không tìm thấy khóa học", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, "Khóa học này chưa có bài kiểm tra", Toast.LENGTH_SHORT).show();
                         finish();
                     }
                 })
                 .addOnFailureListener(e -> {
-                    android.util.Log.e("CourseTest", "Error loading test data", e);
+                    android.util.Log.e("CourseTestActivity", "Error loading test data", e);
                     Toast.makeText(this, "Lỗi tải bài kiểm tra: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                     finish();
                 });

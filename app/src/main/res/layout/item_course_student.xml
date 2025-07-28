@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/card_view"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="8dp"
-    app:cardCornerRadius="8dp"
+    app:cardCornerRadius="12dp"
     app:cardElevation="4dp">
 
     <LinearLayout
@@ -14,11 +13,12 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- Student Info -->
+        <!-- Student Info Header -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
+            android:gravity="center_vertical"
             android:layout_marginBottom="12dp">
 
             <LinearLayout
@@ -29,16 +29,16 @@
 
                 <TextView
                     android:id="@+id/tv_student_name"
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Tên học viên"
-                    android:textSize="16sp"
+                    android:textSize="18sp"
                     android:textStyle="bold"
                     android:textColor="@android:color/black" />
 
                 <TextView
                     android:id="@+id/tv_student_email"
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="email@example.com"
                     android:textSize="14sp"
@@ -47,25 +47,28 @@
 
                 <TextView
                     android:id="@+id/tv_enrollment_date"
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Đăng ký: 01/01/2024"
+                    android:text="Ngày đăng ký: --"
                     android:textSize="12sp"
                     android:textColor="@android:color/darker_gray"
                     android:layout_marginTop="2dp" />
 
             </LinearLayout>
 
+            <!-- Status Badge -->
             <TextView
-                android:id="@+id/tv_status"
+                android:id="@+id/tv_status_badge"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Đang học"
                 android:textSize="12sp"
-                android:textStyle="bold"
-                android:padding="6dp"
-                android:background="@drawable/bg_status_badge"
-                android:layout_gravity="center_vertical" />
+                android:textColor="@android:color/white"
+                android:background="@android:color/holo_green_dark"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="4dp"
+                android:minWidth="60dp"
+                android:gravity="center" />
 
         </LinearLayout>
 
@@ -74,98 +77,60 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
+            android:background="@android:color/background_light"
+            android:padding="12dp"
             android:layout_marginBottom="12dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="📚 Tiến độ học tập"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="@android:color/black"
+                android:layout_marginBottom="8dp" />
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:layout_marginBottom="8dp">
+                android:gravity="center_vertical"
+                android:layout_marginBottom="6dp">
 
                 <TextView
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:text="Tiến độ:"
-                    android:textSize="12sp"
-                    android:textColor="@android:color/darker_gray" />
+                    android:layout_weight="1"
+                    android:text="Hoàn thành bài học:"
+                    android:textSize="13sp" />
 
                 <TextView
-                    android:id="@+id/tv_progress"
+                    android:id="@+id/tv_lesson_progress"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="0%"
-                    android:textSize="12sp"
+                    android:text="0/0 (0%)"
+                    android:textSize="13sp"
                     android:textStyle="bold"
-                    android:textColor="@android:color/black"
-                    android:layout_marginStart="8dp" />
+                    android:textColor="@android:color/holo_blue_dark" />
 
             </LinearLayout>
 
             <ProgressBar
-                android:id="@+id/progress_bar"
+                android:id="@+id/progress_bar_lessons"
                 style="?android:attr/progressBarStyleHorizontal"
                 android:layout_width="match_parent"
                 android:layout_height="8dp"
-                android:progress="0"
                 android:max="100"
-                android:progressTint="@color/colorPrimary" />
+                android:progress="0"
+                android:layout_marginBottom="8dp" />
 
-        </LinearLayout>
-
-        <!-- Quiz and Score Info -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="16dp">
-
-            <LinearLayout
-                android:layout_width="0dp"
+            <TextView
+                android:id="@+id/tv_test_score"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Bài kiểm tra"
-                    android:textSize="12sp"
-                    android:textColor="@android:color/darker_gray" />
-
-                <TextView
-                    android:id="@+id/tv_quiz_progress"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="0/0"
-                    android:textSize="14sp"
-                    android:textStyle="bold"
-                    android:textColor="@android:color/black" />
-
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Điểm TB"
-                    android:textSize="12sp"
-                    android:textColor="@android:color/darker_gray" />
-
-                <TextView
-                    android:id="@+id/tv_score"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="0.0"
-                    android:textSize="14sp"
-                    android:textStyle="bold"
-                    android:textColor="@android:color/black" />
-
-            </LinearLayout>
+                android:text="🎯 Chưa làm bài kiểm tra"
+                android:textSize="13sp"
+                android:textColor="@android:color/darker_gray" />
 
         </LinearLayout>
 
@@ -177,31 +142,36 @@
             android:gravity="end">
 
             <Button
-                android:id="@+id/btn_message"
-                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:id="@+id/btn_view_details"
+                style="@style/Widget.AppCompat.Button.Borderless"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:text="Chi tiết"
+                android:textSize="12sp"
+                android:textColor="@android:color/holo_blue_dark"
+                android:minWidth="80dp"
+                android:layout_marginEnd="8dp" />
+
+            <Button
+                android:id="@+id/btn_send_message"
+                style="@style/Widget.AppCompat.Button.Borderless"
                 android:layout_width="wrap_content"
                 android:layout_height="36dp"
                 android:text="Nhắn tin"
-                android:textSize="11sp"
+                android:textSize="12sp"
+                android:textColor="@android:color/holo_green_dark"
+                android:minWidth="80dp"
                 android:layout_marginEnd="8dp" />
 
             <Button
-                android:id="@+id/btn_view_progress"
-                style="@style/Widget.Material3.Button.OutlinedButton"
-                android:layout_width="wrap_content"
-                android:layout_height="36dp"
-                android:text="Tiến độ"
-                android:textSize="11sp"
-                android:layout_marginEnd="8dp" />
-
-            <Button
-                android:id="@+id/btn_remove"
-                style="@style/Widget.Material3.Button"
+                android:id="@+id/btn_remove_student"
+                style="@style/Widget.AppCompat.Button.Borderless"
                 android:layout_width="wrap_content"
                 android:layout_height="36dp"
                 android:text="Xóa"
-                android:textSize="11sp"
-                android:backgroundTint="@android:color/holo_red_dark" />
+                android:textSize="12sp"
+                android:textColor="@android:color/holo_red_dark"
+                android:minWidth="60dp" />
 
         </LinearLayout>
 

@@ -71,7 +71,6 @@ public class LoginActivity extends AppCompatActivity {
 
             android.util.Log.d("LoginActivity", "Attempting to login with email: " + email);
 
-            // Thêm timeout để tránh hang quá lâu
             mAuth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener(this, task -> {
                     android.util.Log.d("LoginActivity", "Login task completed. Success: " + task.isSuccessful());
@@ -88,16 +87,6 @@ public class LoginActivity extends AppCompatActivity {
                     android.util.Log.e("LoginActivity", "Login failure", e);
                     handleLoginError(e);
                 });
-
-            // Thêm timeout fallback (15 giây)
-            new android.os.Handler().postDelayed(() -> {
-                if (!btnLogin.isEnabled()) {
-                    // Nếu sau 15 giây vẫn đang loading
-                    btnLogin.setEnabled(true);
-                    btnLogin.setText("Đăng nhập");
-                    Toast.makeText(this, "Timeout: Kết nối quá chậm, vui lòng thử lại", Toast.LENGTH_LONG).show();
-                }
-            }, 15000);
         }
     }
 

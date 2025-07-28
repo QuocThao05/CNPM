@@ -18,13 +18,13 @@ import java.util.List;
 public class EditSingleTestQuestionActivity extends AppCompatActivity {
 
     private static final String TAG = "EditSingleTestQuestion";
-    
+
     private Toolbar toolbar;
     private TextInputEditText etQuestion, etOptionA, etOptionB, etOptionC, etOptionD;
     private RadioGroup rgCorrectAnswer;
     private RadioButton rbOptionA, rbOptionB, rbOptionC, rbOptionD;
     private Button btnSaveQuestion, btnDeleteQuestion;
-    
+
     private FirebaseFirestore db;
     private String courseId, courseName, questionId;
     private SimpleTestQuestion currentQuestion;
@@ -74,7 +74,7 @@ public class EditSingleTestQuestionActivity extends AppCompatActivity {
         courseId = getIntent().getStringExtra("courseId");
         courseName = getIntent().getStringExtra("courseName");
         questionId = getIntent().getStringExtra("questionId");
-        
+
         if (courseName != null) {
             getSupportActionBar().setSubtitle(courseName);
         }
@@ -111,7 +111,7 @@ public class EditSingleTestQuestionActivity extends AppCompatActivity {
                 })
                 .addOnFailureListener(e -> {
                     Log.e(TAG, "Error loading question", e);
-                    Toast.makeText(this, "Lỗi khi tải câu hỏi: " + e.getMessage(), 
+                    Toast.makeText(this, "Lỗi khi tải câu hỏi: " + e.getMessage(),
                                  Toast.LENGTH_SHORT).show();
                     finish();
                 });

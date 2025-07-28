@@ -8,52 +8,68 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import java.util.List;
 
-public class LessonProgressAdapter extends RecyclerView.Adapter<LessonProgressAdapter.LessonProgressViewHolder> {
+public class LessonProgressAdapter extends RecyclerView.Adapter<LessonProgressAdapter.ProgressViewHolder> {
 
-    private List<StudentProgressDetailActivity.LessonProgressItem> lessonProgressList;
+    private List<StudentProgressDetailActivity.LessonProgressItem> progressList;
 
-    public LessonProgressAdapter(List<StudentProgressDetailActivity.LessonProgressItem> lessonProgressList) {
-        this.lessonProgressList = lessonProgressList;
+    public LessonProgressAdapter(List<StudentProgressDetailActivity.LessonProgressItem> progressList) {
+        this.progressList = progressList;
     }
 
     @NonNull
     @Override
-    public LessonProgressViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        // Use existing Android layout
+    public ProgressViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext())
                 .inflate(android.R.layout.simple_list_item_2, parent, false);
-        return new LessonProgressViewHolder(view);
+        return new ProgressViewHolder(view);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull LessonProgressViewHolder holder, int position) {
-        StudentProgressDetailActivity.LessonProgressItem item = lessonProgressList.get(position);
-
-        // Set completion status with emoji icons
-        if (item.isCompleted()) {
-            holder.tvLessonTitle.setText("✅ " + item.getLessonTitle());
-            holder.tvLessonType.setText(item.getLessonType() + " - Đã hoàn thành");
-            holder.tvLessonType.setTextColor(holder.itemView.getContext().getColor(android.R.color.holo_green_dark));
-        } else {
-            holder.tvLessonTitle.setText("⭕ " + item.getLessonTitle());
-            holder.tvLessonType.setText(item.getLessonType() + " - Chưa hoàn thành");
-            holder.tvLessonType.setTextColor(holder.itemView.getContext().getColor(android.R.color.darker_gray));
-        }
+    public void onBindViewHolder(@NonNull ProgressViewHolder holder, int position) {
+        StudentProgressDetailActivity.LessonProgressItem item = progressList.get(position);
+        holder.bind(item);
     }
 
     @Override
     public int getItemCount() {
-        return lessonProgressList != null ? lessonProgressList.size() : 0;
+        return progressList.size();
     }
 
-    static class LessonProgressViewHolder extends RecyclerView.ViewHolder {
-        TextView tvLessonTitle, tvLessonType;
+    public static class ProgressViewHolder extends RecyclerView.ViewHolder {
+        private TextView text1, text2;
 
-        public LessonProgressViewHolder(@NonNull View itemView) {
+        public ProgressViewHolder(@NonNull View itemView) {
             super(itemView);
-            // Use standard Android layout IDs
-            tvLessonTitle = itemView.findViewById(android.R.id.text1);
-            tvLessonType = itemView.findViewById(android.R.id.text2);
+            text1 = itemView.findViewById(android.R.id.text1);
+            text2 = itemView.findViewById(android.R.id.text2);
+        }
+
+        public void bind(StudentProgressDetailActivity.LessonProgressItem item) {
+            // Thiết lập tiêu đề bài học với status
+            String title = "Bài " + item.getLessonOrder() + ": " + item.getLessonTitle();
+            text1.setText(title);
+            text1.setTextSize(16);
+
+            // Thiết lập trạng thái hoàn thành
+            String status;
+            if (item.isCompleted()) {
+                status = "✅ Đã hoàn thành";
+                if (item.getCompletedAt() != null) {
+                    status += " - " + item.getCompletedAt();
+                }
+                text1.setTextColor(itemView.getContext().getColor(android.R.color.holo_green_dark));
+                text2.setTextColor(itemView.getContext().getColor(android.R.color.holo_green_dark));
+            } else {
+                status = "⏳ Chưa hoàn thành";
+                text1.setTextColor(itemView.getContext().getColor(android.R.color.black));
+                text2.setTextColor(itemView.getContext().getColor(android.R.color.darker_gray));
+            }
+
+            text2.setText(status);
+            text2.setTextSize(14);
+
+            // Thêm padding cho item
+            itemView.setPadding(16, 12, 16, 12);
         }
     }
 }
