@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="approved_green">#4CAF50</color>
+    <color name="rejected_red">#F44336</color>
+    <color name="gradient_start">#667eea</color>
+    <color name="gradient_center">#764ba2</color>
+    <color name="gradient_end">#f093fb</color>
+    <color name="approved_start">#56ab2f</color>
+    <color name="approved_end">#a8e6cf</color>
+    <color name="rejected_start">#ff416c</color>
+    <color name="rejected_end">#ff4b2b</color>
+    <color name="white_transparent">#80FFFFFF</color>
+    <color name="dark_overlay">#40000000</color>
+</resources>
+

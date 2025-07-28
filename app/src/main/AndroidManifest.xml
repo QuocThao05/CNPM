@@ -26,10 +26,6 @@
             </intent-filter>
         </activity>
 
-        <!-- Home Activity - Thêm vào để khắc phục lỗi -->
-        <activity
-            android:name=".HomeActivity"
-            android:theme="@style/Theme.Final.NoActionBar" />
 
         <!-- Splash Activity -->
         <activity android:name=".SplashActivity" />
@@ -98,6 +94,16 @@
         <activity android:name=".SystemStatisticsActivity" />
         <activity android:name=".StudentReportActivity" />
         <activity android:name=".StudentDetailReportActivity" />
+
+        <!-- New Enrollment Management Activities -->
+        <activity
+            android:name=".EnrollmentStatusSelectionActivity"
+            android:label="Quản lý đăng ký"
+            android:parentActivityName=".TeacherDashboardActivity" />
+        <activity
+            android:name=".EnrollmentListActivity"
+            android:label="Danh sách học viên"
+            android:parentActivityName=".EnrollmentStatusSelectionActivity" />
 
     </application>
 

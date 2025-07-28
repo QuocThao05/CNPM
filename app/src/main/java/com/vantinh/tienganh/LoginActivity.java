@@ -71,6 +71,7 @@ public class LoginActivity extends AppCompatActivity {
 
             android.util.Log.d("LoginActivity", "Attempting to login with email: " + email);
 
+            // Thêm timeout để tránh hang quá lâu
             mAuth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener(this, task -> {
                     android.util.Log.d("LoginActivity", "Login task completed. Success: " + task.isSuccessful());
@@ -87,6 +88,16 @@ public class LoginActivity extends AppCompatActivity {
                     android.util.Log.e("LoginActivity", "Login failure", e);
                     handleLoginError(e);
                 });
+
+            // Thêm timeout fallback (15 giây)
+            new android.os.Handler().postDelayed(() -> {
+                if (!btnLogin.isEnabled()) {
+                    // Nếu sau 15 giây vẫn đang loading
+                    btnLogin.setEnabled(true);
+                    btnLogin.setText("Đăng nhập");
+                    Toast.makeText(this, "Timeout: Kết nối quá chậm, vui lòng thử lại", Toast.LENGTH_LONG).show();
+                }
+            }, 15000);
         }
     }
 
@@ -102,6 +113,14 @@ public class LoginActivity extends AppCompatActivity {
             return;
         } else if (exception instanceof FirebaseAuthInvalidCredentialsException) {
             errorMessage = "Email hoặc mật khẩu không đúng";
+        } else if (exception instanceof com.google.firebase.FirebaseNetworkException) {
+            // Xử lý lỗi mạng cụ thể
+            errorMessage = "Lỗi kết nối mạng. Vui lòng kiểm tra kết nối Internet và thử lại.";
+            showNetworkErrorDialog();
+            return;
+        } else if (exception instanceof com.google.firebase.auth.FirebaseAuthException) {
+            // Xử lý các lỗi Firebase khác
+            errorMessage = "Lỗi xác thực: " + exception.getMessage();
         } else if (exception != null) {
             errorMessage = "Lỗi đăng nhập: " + exception.getMessage();
         }
@@ -285,5 +304,49 @@ public class LoginActivity extends AppCompatActivity {
         }
 
         return true;
+    }
+
+    private void showNetworkErrorDialog() {
+        new AlertDialog.Builder(this)
+                .setTitle("Lỗi kết nối")
+                .setMessage("Không thể kết nối đến server. Vui lòng kiểm tra:\n\n" +
+                           "• Kết nối Internet\n" +
+                           "• Tắt VPN nếu đang sử dụng\n" +
+                           "• Thử chuyển từ WiFi sang 4G hoặc ngược lại")
+                .setPositiveButton("Thử lại", (dialog, which) -> {
+                    // Retry login with current credentials
+                    handleLogin();
+                })
+                .setNegativeButton("Hủy", null)
+                .setNeutralButton("Cài đặt mạng", (dialog, which) -> {
+                    // Mở cài đặt WiFi
+                    try {
+                        startActivity(new Intent(android.provider.Settings.ACTION_WIFI_SETTINGS));
+                    } catch (Exception e) {
+                        Toast.makeText(this, "Không thể mở cài đặt", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .show();
+    }
+
+    private void retryFirebaseConnection() {
+        // Reset Firebase Auth instance
+        mAuth = FirebaseAuth.getInstance();
+        db = FirebaseFirestore.getInstance();
+
+        // Clear any cached auth state
+        if (mAuth.getCurrentUser() != null) {
+            mAuth.signOut();
+        }
+
+        Toast.makeText(this, "Đã reset kết nối Firebase, vui lòng thử lại", Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Reset button state khi quay lại activity
+        btnLogin.setEnabled(true);
+        btnLogin.setText("Đăng nhập");
     }
 }

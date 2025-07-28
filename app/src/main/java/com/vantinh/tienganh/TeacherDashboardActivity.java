@@ -77,9 +77,9 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             startActivity(new Intent(this, SelectCourseForQuizActivity.class));
         });
 
-        // Nút "Quản lý đăng ký" - chuyển đến EnrollmentManagementActivity
+        // Nút "Quản lý đăng ký" - chuyển đến EnrollmentStatusSelectionActivity
         btnCreateCourse.setOnClickListener(v -> {
-            Intent intent = new Intent(this, EnrollmentManagementActivity.class);
+            Intent intent = new Intent(this, EnrollmentStatusSelectionActivity.class);
             // Truyền teacherId để activity có thể lọc dữ liệu theo giáo viên
             intent.putExtra("teacherId", currentTeacherId);
             startActivity(intent);
