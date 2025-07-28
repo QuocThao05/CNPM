@@ -298,76 +298,96 @@ public class StudentInboxActivity extends AppCompatActivity {
     }
 
     private void onMessageClick(InboxMessage message) {
-        // Mở dialog hiển thị chi tiết message
+        // Hiển thị dialog chi tiết tin nhắn
         StudentInboxDetailDialog dialog = new StudentInboxDetailDialog(this, message, new StudentInboxDetailDialog.OnMessageActionListener() {
             @Override
             public void onMarkAsRead(String messageId) {
-                markMessageAsRead(message);
+                markMessageAsRead(messageId, message.getType());
             }
 
             @Override
             public void onViewCourse(String courseId) {
-                // Navigate to course detail
-                if (courseId != null) {
-                    android.content.Intent intent = new android.content.Intent(StudentInboxActivity.this, StudentCourseDetailActivity.class);
-                    intent.putExtra("courseId", courseId);
-                    intent.putExtra("courseTitle", message.getCourseName());
-                    startActivity(intent);
+                android.util.Log.d("StudentInbox", "onViewCourse called with courseId: " + courseId);
+
+                if (courseId == null || courseId.trim().isEmpty()) {
+                    Toast.makeText(StudentInboxActivity.this, "Không có thông tin khóa học", Toast.LENGTH_SHORT).show();
+                    return;
                 }
+
+                // Chuyển đến StudentCourseDetailActivity với đúng tên extra parameters
+                android.content.Intent intent = new android.content.Intent(StudentInboxActivity.this, StudentCourseDetailActivity.class);
+                intent.putExtra("course_id", courseId);
+                intent.putExtra("course_title", message.getCourseName() != null ? message.getCourseName() : "Chi tiết khóa học");
+
+                android.util.Log.d("StudentInbox", "Starting StudentCourseDetailActivity with courseId: " + courseId + ", courseName: " + message.getCourseName());
+
+                startActivity(intent);
             }
         });
-        dialog.show();
 
-        // Mark as read if not read yet
-        if (!message.isRead()) {
-            markMessageAsRead(message);
-        }
+        dialog.show();
     }
 
-    private void markMessageAsRead(InboxMessage message) {
-        if (message.getType().equals("notification")) {
+    private void markMessageAsRead(String messageId, String messageType) {
+        android.util.Log.d("StudentInbox", "Marking message as read: " + messageId + " (type: " + messageType + ")");
+
+        if ("notification".equals(messageType)) {
             // Mark notification as read
-            db.collection("notifications").document(message.getId())
+            db.collection("notifications").document(messageId)
                     .update("isRead", true)
                     .addOnSuccessListener(aVoid -> {
-                        message.setRead(true);
+                        android.util.Log.d("StudentInbox", "Notification marked as read");
+                        // Update local data
+                        for (InboxMessage msg : messageList) {
+                            if (msg.getId().equals(messageId)) {
+                                msg.setRead(true);
+                                break;
+                            }
+                        }
                         inboxAdapter.notifyDataSetChanged();
-                        android.util.Log.d("StudentInbox", "Marked notification as read: " + message.getId());
                     })
                     .addOnFailureListener(e -> {
                         android.util.Log.e("StudentInbox", "Error marking notification as read", e);
+                        Toast.makeText(this, "Lỗi đánh dấu đã đọc", Toast.LENGTH_SHORT).show();
                     });
-        } else if (message.getType().equals("feedback_response")) {
-            // For feedback responses, we could add a "readByStudent" field
-            db.collection("feedbacks").document(message.getId())
+        } else if ("feedback_response".equals(messageType)) {
+            // Mark feedback response as read by student
+            db.collection("feedbacks").document(messageId)
                     .update("readByStudent", true)
                     .addOnSuccessListener(aVoid -> {
-                        message.setRead(true);
+                        android.util.Log.d("StudentInbox", "Feedback response marked as read");
+                        // Update local data
+                        for (InboxMessage msg : messageList) {
+                            if (msg.getId().equals(messageId)) {
+                                msg.setRead(true);
+                                break;
+                            }
+                        }
                         inboxAdapter.notifyDataSetChanged();
-                        android.util.Log.d("StudentInbox", "Marked feedback response as read: " + message.getId());
                     })
                     .addOnFailureListener(e -> {
                         android.util.Log.e("StudentInbox", "Error marking feedback response as read", e);
+                        Toast.makeText(this, "Lỗi đánh dấu đã đọc", Toast.LENGTH_SHORT).show();
                     });
-        }
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        if (currentStudentId != null) {
-            // Refresh messages when returning
-            messageList.clear();
-            loadInboxMessages();
         }
     }
 
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         if (item.getItemId() == android.R.id.home) {
-            finish();
+            onBackPressed();
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Reload messages when returning to this activity
+        if (currentStudentId != null) {
+            messageList.clear();
+            loadInboxMessages();
+        }
     }
 }
