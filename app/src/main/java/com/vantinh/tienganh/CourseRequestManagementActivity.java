@@ -2,6 +2,7 @@ package com.vantinh.tienganh;
 
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
@@ -25,7 +26,9 @@ public class CourseRequestManagementActivity extends AppCompatActivity implement
     private FirebaseFirestore db;
     private FirebaseAuth auth;
     private RealtimeManager realtimeManager;
-    private String currentTeacherId; // Đổi từ currentTeacherName sang currentTeacherId
+    private String currentTeacherId;
+    private TextView toolbarTitle; // Thêm reference cho custom title
+    private TextView tvRequestsCount; // Thêm reference cho counter
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,11 +45,13 @@ public class CourseRequestManagementActivity extends AppCompatActivity implement
         recyclerView = findViewById(R.id.recycler_view_requests);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
+        // Khởi tạo custom toolbar title
+        toolbarTitle = findViewById(R.id.toolbar_title);
+        tvRequestsCount = findViewById(R.id.tv_requests_count); // Ánh xạ TextView đếm số lượng yêu cầu
+
         requestList = new ArrayList<>();
         adapter = new CourseRequestAdapter(requestList, this);
         recyclerView.setAdapter(adapter);
-
-        // Bỏ các debug buttons - không cần thiết nữa
     }
 
     // Debug method được cải thiện để kiểm tra tất cả dữ liệu
@@ -150,7 +155,8 @@ public class CourseRequestManagementActivity extends AppCompatActivity implement
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-            getSupportActionBar().setTitle("Yêu cầu tham gia khóa học");
+            // Bỏ setTitle vì đã dùng custom TextView
+            getSupportActionBar().setTitle(""); // Set empty để không hiển thị title mặc định
         }
         toolbar.setNavigationOnClickListener(v -> finish());
     }
@@ -280,6 +286,9 @@ public class CourseRequestManagementActivity extends AppCompatActivity implement
                             getSupportActionBar().setTitle("Yêu cầu tham gia (" + requestList.size() + ")");
                         }
 
+                        // Cập nhật số lượng yêu cầu trong TextView
+                        updateRequestsCount(requestList.size());
+
                         // Debug: Force RecyclerView to be visible
                         recyclerView.setVisibility(android.view.View.VISIBLE);
                         Log.d("CourseRequestManagement", "RecyclerView visibility set to VISIBLE");
@@ -294,9 +303,18 @@ public class CourseRequestManagementActivity extends AppCompatActivity implement
     }
 
     private void showNewRequestNotification(int count) {
-        // Hiển thị notification subtle về số lượng yêu cầu
-        if (getSupportActionBar() != null) {
-            getSupportActionBar().setTitle("Yêu cầu tham gia (" + count + ")");
+        // Cập nhật custom TextView thay vì ActionBar title
+        if (toolbarTitle != null) {
+            toolbarTitle.setText("Yêu cầu tham gia (" + count + ")");
+        }
+    }
+
+    // Method mới để cập nhật số lượng yêu cầu trong TextView
+    private void updateRequestsCount(int count) {
+        if (tvRequestsCount != null) {
+            String countText = count + " yêu cầu";
+            tvRequestsCount.setText(countText);
+            Log.d("CourseRequestManagement", "Updated requests count to: " + countText);
         }
     }
 
@@ -349,25 +367,24 @@ public class CourseRequestManagementActivity extends AppCompatActivity implement
             if (item.getStudentId().equals(request.getStudentId()) &&
                 item.getCourseId().equals(request.getCourseId())) {
 
-                // Tạo biến final để sử dụng trong lambda
                 final int indexToRemove = i;
-
-                // Loại bỏ item khỏi danh sách
                 requestList.remove(i);
 
-                // Cập nhật adapter ngay lập tức
                 runOnUiThread(() -> {
                     adapter.notifyItemRemoved(indexToRemove);
 
-                    // Cập nhật title với số lượng mới
-                    if (getSupportActionBar() != null) {
-                        getSupportActionBar().setTitle("Yêu cầu tham gia (" + requestList.size() + ")");
+                    // Cập nhật custom TextView thay vì ActionBar title
+                    if (toolbarTitle != null) {
+                        toolbarTitle.setText("Quản Lý Yêu Cầu Đăng Ký (" + requestList.size() + ")");
                     }
 
                     // Hiển thị thông báo nếu không còn yêu cầu nào
                     if (requestList.isEmpty()) {
                         Toast.makeText(CourseRequestManagementActivity.this, "Đã xử lý hết tất cả yêu cầu", Toast.LENGTH_SHORT).show();
                     }
+
+                    // Cập nhật số lượng yêu cầu trong TextView
+                    updateRequestsCount(requestList.size());
                 });
 
                 Log.d("CourseRequestManagement", "Removed request from list - Student: " +

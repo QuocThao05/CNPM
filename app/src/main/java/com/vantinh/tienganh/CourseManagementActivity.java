@@ -20,7 +20,7 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.button.MaterialButton;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -31,12 +31,13 @@ import java.util.List;
 public class CourseManagementActivity extends AppCompatActivity {
 
     private RecyclerView rvCourses;
-    private FloatingActionButton fabAddCourse;
-    private LinearLayout tvNoCourses;
+    private ExtendedFloatingActionButton fabAddCourse;
+    // private LinearLayout tvNoCourses;
     private Toolbar toolbar;
     private TextInputEditText etSearch;
     private MaterialButton btnFilter;
-    private TextView tvTotalCourses, tvTotalStudents, tvAvgRating, tvCourseCount;
+    private TextView tvTotalCourses, tvTotalStudents;
+    // private TextView tvAvgRating, tvCourseCount;
 
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
@@ -70,15 +71,12 @@ public class CourseManagementActivity extends AppCompatActivity {
 
     private void initViews() {
         toolbar = findViewById(R.id.toolbar);
-        rvCourses = findViewById(R.id.rv_courses);
+        rvCourses = findViewById(R.id.recyclerView);
         fabAddCourse = findViewById(R.id.fab_add_course);
-        tvNoCourses = findViewById(R.id.tv_no_courses);
         etSearch = findViewById(R.id.et_search);
         btnFilter = findViewById(R.id.btn_filter);
         tvTotalCourses = findViewById(R.id.tv_total_courses);
         tvTotalStudents = findViewById(R.id.tv_total_students);
-        tvAvgRating = findViewById(R.id.tv_avg_rating);
-        tvCourseCount = findViewById(R.id.tv_course_count);
     }
 
     private void setupToolbar() {
@@ -257,21 +255,21 @@ public class CourseManagementActivity extends AppCompatActivity {
 
     private void updateUI() {
         if (filteredCourseList.isEmpty()) {
-            tvNoCourses.setVisibility(View.VISIBLE);
+            // tvNoCourses.setVisibility(View.VISIBLE);
             rvCourses.setVisibility(View.GONE);
         } else {
-            tvNoCourses.setVisibility(View.GONE);
+            // tvNoCourses.setVisibility(View.GONE);
             rvCourses.setVisibility(View.VISIBLE);
         }
 
         // Update course count
-        if (tvCourseCount != null) {
+        /*if (tvCourseCount != null) {
             String countText = filteredCourseList.size() + " khóa học";
             if (!searchQuery.isEmpty() || !selectedCategory.equals("Tất cả") || !selectedLevel.equals("Tất cả")) {
                 countText += " (đã lọc)";
             }
             tvCourseCount.setText(countText);
-        }
+        }*/
     }
 
     private void loadStatistics() {
@@ -283,9 +281,9 @@ public class CourseManagementActivity extends AppCompatActivity {
         loadTotalStudentsFromApprovedRequests(currentUserId);
 
         // Set average rating (placeholder)
-        if (tvAvgRating != null) {
+        /*if (tvAvgRating != null) {
             tvAvgRating.setText("4.8");
-        }
+        }*/
     }
 
     private void loadTotalStudentsFromApprovedRequests(String teacherId) {
@@ -403,7 +401,11 @@ public class CourseManagementActivity extends AppCompatActivity {
 
                 } else {
                     android.util.Log.e("CourseManagement", "Error loading courses", task.getException());
-                    Toast.makeText(this, "Lỗi khi tải khóa học: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                    String errorMessage = "Lỗi khi tải khóa học";
+                    if (task.getException() != null && task.getException().getMessage() != null) {
+                        errorMessage += ": " + task.getException().getMessage();
+                    }
+                    Toast.makeText(this, errorMessage, Toast.LENGTH_SHORT).show();
                 }
             });
     }
@@ -413,15 +415,6 @@ public class CourseManagementActivity extends AppCompatActivity {
             Intent intent = new Intent(this, CreateCourseActivity.class);
             startActivity(intent);
         });
-
-        // Add click listener for create first course button in empty state
-        MaterialButton btnCreateFirstCourse = findViewById(R.id.btn_create_first_course);
-        if (btnCreateFirstCourse != null) {
-            btnCreateFirstCourse.setOnClickListener(v -> {
-                Intent intent = new Intent(this, CreateCourseActivity.class);
-                startActivity(intent);
-            });
-        }
     }
 
     @Override
