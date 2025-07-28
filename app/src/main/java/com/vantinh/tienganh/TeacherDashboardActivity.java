@@ -5,7 +5,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
@@ -19,7 +19,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
 
     private Toolbar toolbar;
     private TextView tvWelcome, tvCoursesCount, tvStudentsCount, tvPendingRequestsCount;
-    private Button btnManageCourses, btnViewRequests, btnCreateQuiz, btnCreateCourse;
+    private LinearLayout btnManageCourses, btnViewRequests, btnCreateQuiz, btnCreateCourse;
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
     private RealtimeManager realtimeManager;
@@ -219,7 +219,6 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                             tvPendingRequestsCount.setText(String.valueOf(count));
 
                             if (count > 0) {
-                                btnViewRequests.setText("Xem yêu cầu (" + count + ")");
                                 // Animation nhấp nháy khi có yêu cầu mới
                                 btnViewRequests.animate()
                                         .scaleX(1.1f)
@@ -233,8 +232,6 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                                                     .start();
                                         })
                                         .start();
-                            } else {
-                                btnViewRequests.setText("Xem yêu cầu");
                             }
                         });
                     }
