@@ -4,8 +4,9 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="8dp"
-    app:cardCornerRadius="8dp"
-    app:cardElevation="4dp">
+    app:cardCornerRadius="12dp"
+    app:cardElevation="4dp"
+    app:cardUseCompatPadding="true">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -26,7 +27,9 @@
                 android:layout_weight="1"
                 android:text="Học viên:"
                 android:textStyle="bold"
-                android:textSize="14sp" />
+                android:textSize="16sp"
+                android:fontFamily="sans-serif-medium"
+                android:textColor="@android:color/black" />
 
             <TextView
                 android:id="@+id/tv_student_name"
@@ -34,7 +37,9 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="2"
                 android:text="Tên học viên"
-                android:textSize="14sp" />
+                android:textSize="16sp"
+                android:fontFamily="sans-serif"
+                android:textColor="@android:color/black" />
 
         </LinearLayout>
 
@@ -51,7 +56,9 @@
                 android:layout_weight="1"
                 android:text="Email:"
                 android:textStyle="bold"
-                android:textSize="14sp" />
+                android:textSize="16sp"
+                android:fontFamily="sans-serif-medium"
+                android:textColor="@android:color/black" />
 
             <TextView
                 android:id="@+id/tv_student_email"
@@ -59,7 +66,9 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="2"
                 android:text="email@example.com"
-                android:textSize="14sp" />
+                android:textSize="16sp"
+                android:fontFamily="sans-serif"
+                android:textColor="@android:color/darker_gray" />
 
         </LinearLayout>
 
@@ -76,7 +85,9 @@
                 android:layout_weight="1"
                 android:text="Khóa học:"
                 android:textStyle="bold"
-                android:textSize="14sp" />
+                android:textSize="16sp"
+                android:fontFamily="sans-serif-medium"
+                android:textColor="@android:color/black" />
 
             <TextView
                 android:id="@+id/tv_course_name"
@@ -84,8 +95,10 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="2"
                 android:text="Tên khóa học"
-                android:textSize="14sp"
-                android:textStyle="bold" />
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:fontFamily="sans-serif-medium"
+                android:textColor="@android:color/holo_blue_dark" />
 
         </LinearLayout>
 
@@ -102,7 +115,9 @@
                 android:layout_weight="1"
                 android:text="Ngày gửi:"
                 android:textStyle="bold"
-                android:textSize="14sp" />
+                android:textSize="16sp"
+                android:fontFamily="sans-serif-medium"
+                android:textColor="@android:color/black" />
 
             <TextView
                 android:id="@+id/tv_request_date"
@@ -110,7 +125,9 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="2"
                 android:text="01/01/2024 10:00"
-                android:textSize="14sp" />
+                android:textSize="16sp"
+                android:fontFamily="sans-serif"
+                android:textColor="@android:color/darker_gray" />
 
         </LinearLayout>
 
@@ -120,7 +137,9 @@
             android:layout_height="wrap_content"
             android:text="Lời nhắn:"
             android:textStyle="bold"
-            android:textSize="14sp"
+            android:textSize="16sp"
+            android:fontFamily="sans-serif-medium"
+            android:textColor="@android:color/black"
             android:layout_marginBottom="4dp" />
 
         <TextView
@@ -128,53 +147,81 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Lời nhắn từ học viên"
-            android:textSize="14sp"
+            android:textSize="16sp"
+            android:fontFamily="sans-serif"
+            android:textColor="@android:color/black"
             android:background="#F5F5F5"
-            android:padding="8dp"
+            android:padding="12dp"
             android:layout_marginBottom="12dp" />
 
         <!-- Status and Buttons -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
+            android:orientation="vertical">
 
-            <TextView
-                android:layout_width="wrap_content"
+            <!-- Status Row -->
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Trạng thái: "
-                android:textStyle="bold"
-                android:textSize="14sp" />
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="12dp">
 
-            <TextView
-                android:id="@+id/tv_status"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="PENDING"
-                android:textSize="14sp"
-                android:textStyle="bold"
-                android:layout_marginStart="4dp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Trạng thái: "
+                    android:textStyle="bold"
+                    android:textSize="16sp"
+                    android:fontFamily="sans-serif-medium"
+                    android:textColor="@android:color/black" />
 
-            <Button
-                android:id="@+id/btn_approve"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Phê duyệt"
-                android:textSize="12sp"
-                android:backgroundTint="#4CAF50"
-                android:textColor="@android:color/white"
-                android:layout_marginEnd="8dp" />
+                <TextView
+                    android:id="@+id/tv_status"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="PENDING"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:fontFamily="sans-serif-medium"
+                    android:textColor="@android:color/holo_orange_dark" />
 
-            <Button
-                android:id="@+id/btn_reject"
-                android:layout_width="wrap_content"
+            </LinearLayout>
+
+            <!-- Buttons Row -->
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Từ chối"
-                android:textSize="12sp"
-                android:backgroundTint="#F44336"
-                android:textColor="@android:color/white" />
+                android:orientation="horizontal"
+                android:gravity="end">
+
+                <Button
+                    android:id="@+id/btn_approve"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:text="Phê duyệt"
+                    android:textSize="14sp"
+                    android:fontFamily="sans-serif"
+                    android:backgroundTint="@android:color/holo_green_dark"
+                    android:textColor="@android:color/white"
+                    android:layout_marginEnd="8dp"
+                    android:paddingHorizontal="16dp"
+                    android:minWidth="100dp"/>
+
+                <Button
+                    android:id="@+id/btn_reject"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:text="Từ chối"
+                    android:textSize="14sp"
+                    android:fontFamily="sans-serif"
+                    android:backgroundTint="@android:color/holo_red_dark"
+                    android:textColor="@android:color/white"
+                    android:paddingHorizontal="16dp"
+                    android:minWidth="100dp"/>
+
+            </LinearLayout>
 
         </LinearLayout>
 
